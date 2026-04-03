@@ -177,7 +177,6 @@ body{min-height:100vh;background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2)
 </div>
 
 <script>
-// ── SAME FIREBASE CONFIG AS liquidtype2.html ──────────
 const FB = {
   apiKey:            "AIzaSyBgppLaWv-3M9IsCzUtDD5Z8pqUxPtdPLk",
   authDomain:        "liquidtipe.firebaseapp.com",
@@ -191,7 +190,6 @@ let db;
 firebase.initializeApp(FB);
 db = firebase.firestore();
 
-// ── SESSION ───────────────────────────────────────────
 function getU(){ return localStorage.getItem('lt_u') || null; }
 function setU(u){ u ? localStorage.setItem('lt_u',u) : localStorage.removeItem('lt_u'); }
 let UC = null;
@@ -222,7 +220,6 @@ function doLogout() {
   window.location.href = 'index.html';
 }
 
-// ── SESSION STATS ─────────────────────────────────────
 let stats = { flips: 0, wins: 0, losses: 0, net: 0 };
 let history = [];
 
@@ -253,7 +250,6 @@ function renderHistory() {
   `).join('');
 }
 
-// ── BET HELPERS ───────────────────────────────────────
 function setBet(n) {
   const max = UC ? (UC.coins || 0) : 0;
   document.getElementById('bet-input').value = Math.min(n, max);
@@ -267,7 +263,6 @@ function setBetAll() {
   document.getElementById('bet-input').value = Math.max(1, max);
 }
 
-// ── FLIP LOGIC ────────────────────────────────────────
 let isFlipping = false;
 
 async function doFlip() {
@@ -282,16 +277,16 @@ async function doFlip() {
   isFlipping = true;
   setButtonsDisabled(true);
 
-  // Clear result
+
   document.getElementById('result-area').innerHTML = '';
   const coinEl = document.getElementById('coin');
   coinEl.className = 'coin';
   coinEl.textContent = '🪙';
 
-  // Flip animation
+
   coinEl.classList.add('flipping');
 
-  // Decide outcome (true = win)
+  
   const won = Math.random() < 0.5;
 
   await new Promise(r => setTimeout(r, 850)); // wait for animation
@@ -300,18 +295,18 @@ async function doFlip() {
   coinEl.classList.add(won ? 'won' : 'lost');
   coinEl.textContent = won ? '✅' : '❌';
 
-  // Update coins
+  
   const newCoins = won ? balance + bet : balance - bet;
   await saveCoins(newCoins);
 
-  // Update stats
+  
   stats.flips++;
   if (won) { stats.wins++; stats.net += bet; }
   else { stats.losses++; stats.net -= bet; }
   updateStats();
   addHistory(bet, won);
 
-  // Show result
+  
   const resEl = document.getElementById('result-area');
   if (won) {
     resEl.innerHTML = `<div class="result-txt win">YOU WON!</div><div class="result-sub">+${bet} coins 🎉</div>`;
@@ -319,7 +314,7 @@ async function doFlip() {
     resEl.innerHTML = `<div class="result-txt lose">YOU LOST</div><div class="result-sub">-${bet} coins 💀</div>`;
   }
 
-  // Reset after 1.5s
+ 
   setTimeout(() => {
     isFlipping = false;
     setButtonsDisabled(false);
@@ -337,7 +332,7 @@ function setButtonsDisabled(d) {
   document.querySelectorAll('.qbtn').forEach(b => b.disabled = d);
 }
 
-// ── TOAST ─────────────────────────────────────────────
+
 let tTimer = null;
 function showToast(msg) {
   let t = document.querySelector('.toast'); if(t) t.remove();
@@ -347,7 +342,7 @@ function showToast(msg) {
   tTimer = setTimeout(() => t && t.remove(), 2800);
 }
 
-// ── INIT ──────────────────────────────────────────────
+
 async function init() {
   const ok = await loadUser();
   document.getElementById('page-loading').style.display = 'none';
