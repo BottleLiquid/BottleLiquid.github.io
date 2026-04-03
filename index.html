@@ -7,7 +7,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-/* ── THEMES ── */
 :root{--bg1:#000;--bg2:#0d0000;--bg3:#1a0000;--accent:#e60000;--accent2:#ff3333;--accent3:#ff6666;--card:rgba(30,0,0,.75);--cb:rgba(200,0,0,.25);--text:#f5f5f5;--muted:rgba(255,255,255,.4);--glow:0 0 16px rgba(200,0,0,.5);--glow2:0 0 28px rgba(200,0,0,.3);--ok:#00e676;--bad:#ff1744;--bar:rgba(255,255,255,.08);--inp:rgba(0,0,0,.4)}
 body.theme-disco{--bg1:#0a001a;--bg2:#00001a;--bg3:#001a0d;--accent:#ff00ff;--accent2:#00ffff;--accent3:#ffff00;--card:rgba(20,0,40,.8);--cb:rgba(255,0,255,.3);--glow:0 0 16px rgba(255,0,255,.5);--glow2:0 0 28px rgba(0,255,255,.3)}
 body.theme-ocean{--bg1:#000e1a;--bg2:#001a33;--bg3:#002244;--accent:#00aaff;--accent2:#33ccff;--accent3:#66ddff;--card:rgba(0,15,40,.75);--cb:rgba(0,150,255,.25);--glow:0 0 16px rgba(0,150,255,.5);--glow2:0 0 28px rgba(0,150,255,.3)}
@@ -17,17 +16,17 @@ body.theme-toxic{--bg1:#001400;--bg2:#001a00;--bg3:#002200;--accent:#00ff44;--ac
 body.theme-sunset{--bg1:#120005;--bg2:#1a0010;--bg3:#200020;--accent:#ff6600;--accent2:#ff9900;--accent3:#ffcc00;--card:rgba(25,5,0,.75);--cb:rgba(255,100,0,.25);--glow:0 0 16px rgba(255,100,0,.5);--glow2:0 0 28px rgba(255,100,0,.3)}
 body.theme-custom-gradient{--bg1:var(--cg1,#001a2e);--bg2:var(--cg2,#002b4d);--bg3:var(--cg3,#003d6b);--accent:var(--cga,#00c8ff);--accent2:var(--cgb,#00e5ff);--accent3:var(--cgc,#80f0ff);--card:rgba(0,20,40,.7);--cb:rgba(0,200,255,.25);--glow:0 0 16px rgba(0,200,255,.5)}
 
-/* ── RESET ── */
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{min-height:100vh;background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 50%,var(--bg3) 100%);color:var(--text);font-family:'Rajdhani',sans-serif;overflow-x:hidden;transition:background .5s}
 body.theme-disco{animation:hueRot 4s infinite}
 @keyframes hueRot{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
 
-/* ── SETUP BANNER ── */
+
 #setup-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#331100;border-bottom:2px solid #f60;padding:10px 20px;font-size:.9rem;color:#fa4;text-align:center}
 #setup-banner a{color:#fd8;text-decoration:underline}
 
-/* ── LOADING ── */
+
 #loading{position:fixed;inset:0;z-index:2000;background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
 .ld-logo{font-family:'Bebas Neue',cursive;font-size:3rem;letter-spacing:3px;color:#cc0000}
 .ld-dots{display:flex;gap:6px}
@@ -35,7 +34,7 @@ body.theme-disco{animation:hueRot 4s infinite}
 .ld-dot:nth-child(2){animation-delay:.15s}.ld-dot:nth-child(3){animation-delay:.3s}
 @keyframes db{0%,80%,100%{opacity:.2}40%{opacity:1}}
 
-/* ── AUTH ── */
+
 #auth{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000;background:linear-gradient(135deg,#000 0%,#1a0000 60%,#000 100%)}
 .abox{width:370px;background:#0f0000;border:1px solid #550000;border-radius:6px;padding:34px 30px}
 .alogo{font-family:'Bebas Neue',cursive;font-size:2.8rem;letter-spacing:2px;text-align:center;color:#cc0000;margin-bottom:4px}
@@ -52,7 +51,7 @@ body.theme-disco{animation:hueRot 4s infinite}
 .amsg{text-align:center;margin-top:11px;font-size:.88rem;min-height:18px}
 .amsg.err{color:#f44}.amsg.ok{color:#4f8}
 
-/* ── APP LAYOUT ── */
+
 #app{display:none;min-height:100vh}
 .nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;padding:0 18px;height:52px;background:#0a0000;border-bottom:1px solid #330000}
 .nav-logo{font-family:'Bebas Neue',cursive;font-size:1.55rem;letter-spacing:2px;color:#cc0000;margin-right:24px}
@@ -68,10 +67,9 @@ body.theme-disco{animation:hueRot 4s infinite}
 .nbtn.adm{background:#1a0d00;border-color:#664400;color:#cc7700}.nbtn.adm:hover{background:#2a1500}
 .nbtn.dep{background:#001a10;border-color:#005533;color:#00aa66}.nbtn.dep:hover{background:#002a18}
 
-/* ── TAB CONTENT ── */
 .tab{display:none;padding:28px 20px;max-width:1100px;margin:0 auto}.tab.on{display:block}
 
-/* ── RACE TAB ── */
+
 .race-hdr{text-align:center;margin-bottom:28px}
 .race-ttl{font-family:'Bebas Neue',cursive;font-size:2.3rem;letter-spacing:3px;color:#cc0000}
 .race-sub{color:var(--muted);letter-spacing:2px;font-size:.85rem;margin-top:3px}
@@ -105,12 +103,12 @@ body.theme-disco{animation:hueRot 4s infinite}
 .rcoins{font-size:1.4rem;font-weight:700;color:#ffd700;margin-bottom:18px}
 .rstats{display:flex;justify-content:center;gap:28px;margin-bottom:20px}
 .rst{text-align:center}.rstv{font-size:1.8rem;font-weight:700;color:var(--accent2)}.rstl{font-size:.75rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
-/* Countdown */
+
 .cdown{display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,.72);border-radius:14px;z-index:10}
 .cdown.on{display:flex}
 .cnum{font-family:'Bebas Neue',cursive;font-size:7rem;color:var(--accent);text-shadow:0 0 40px rgba(200,0,0,.8);animation:cpop .45s ease}
 @keyframes cpop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
-/* Searching */
+
 .searching-ui{display:none;background:rgba(0,0,100,.15);border:1px solid rgba(0,100,255,.3);border-radius:14px;padding:28px;text-align:center;margin-bottom:18px}
 .searching-ui.on{display:block}
 .search-title{font-family:'Bebas Neue',cursive;font-size:1.8rem;letter-spacing:3px;color:#4499ff;margin-bottom:8px}
@@ -118,7 +116,6 @@ body.theme-disco{animation:hueRot 4s infinite}
 .search-timer{font-size:2rem;font-weight:700;color:#4499ff;margin-bottom:16px;font-family:'JetBrains Mono',monospace}
 .search-matched{display:none;color:#4f8;font-size:1.1rem;font-weight:700;letter-spacing:1px}
 
-/* ── SHOP ── */
 .shop-hdr{text-align:center;margin-bottom:28px}
 .shop-ttl{font-family:'Bebas Neue',cursive;font-size:2.8rem;letter-spacing:4px;color:var(--accent2)}
 .shop-bal{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,200,0,.3);border-radius:20px;padding:7px 18px;margin-top:7px;font-size:1rem;font-weight:700;color:#ffd700}
@@ -152,7 +149,7 @@ body.theme-disco{animation:hueRot 4s infinite}
 .gmprev{height:54px;border-radius:7px;margin-bottom:10px}
 .gapply{padding:9px 22px;border:none;border-radius:7px;background:var(--accent);color:#fff;font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer}
 
-/* ── CHAT ── */
+
 .chat-wrap{max-width:780px;margin:0 auto}
 .chat-ttl{font-family:'Bebas Neue',cursive;font-size:2.3rem;letter-spacing:3px;color:var(--accent2);text-align:center;margin-bottom:22px}
 .chatbox{background:var(--card);border:1px solid var(--cb);border-radius:14px;overflow:hidden;box-shadow:var(--glow2)}
@@ -170,7 +167,7 @@ body.theme-disco{animation:hueRot 4s infinite}
 .csend{padding:11px 22px;border:none;border-radius:9px;background:#cc0000;color:#fff;font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer}
 .csend:hover{background:#dd0000}
 
-/* ── LEADERBOARD ── */
+
 .lbtable{width:100%;border-collapse:collapse}
 .lbtable th{text-align:left;padding:9px 11px;font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.07)}
 .lbtable td{padding:11px;font-size:.92rem;border-bottom:1px solid rgba(255,255,255,.04)}
@@ -178,7 +175,7 @@ body.theme-disco{animation:hueRot 4s infinite}
 .lbrank.r1{color:#ffd700}.lbrank.r2{color:#c0c0c0}.lbrank.r3{color:#cd7f32}
 .lbname{font-weight:700}.lbcoins{color:#ffd700;font-weight:700}
 
-/* ── MODALS ── */
+
 .moverlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.82);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:18px}
 .moverlay.on{display:flex}
 .modal{background:#0a0000;border:1px solid rgba(200,0,0,.4);border-radius:14px;padding:28px;width:100%;max-width:660px;max-height:90vh;overflow-y:auto;box-shadow:0 0 60px rgba(200,0,0,.2);animation:mshow .22s ease}
@@ -219,7 +216,7 @@ body.theme-disco{animation:hueRot 4s infinite}
 @keyframes tin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card-panel{background:var(--card);border:1px solid var(--cb);border-radius:14px;padding:22px;box-shadow:var(--glow2)}
 
-/* ── PROFILE MODAL ── */
+
 .modal.profile{max-width:420px;border-color:rgba(200,0,0,.35)}
 .prof-top{display:flex;align-items:center;gap:18px;margin-bottom:24px}
 .prof-avatar{width:68px;height:68px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#800000);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',cursive;font-size:2rem;flex-shrink:0;border:2px solid rgba(200,0,0,.4);box-shadow:var(--glow)}
@@ -295,10 +292,10 @@ body.theme-disco{animation:hueRot 4s infinite}
     </div>
   </nav>
 
-  <!-- RACE -->
+ 
   <div id="tab-race" class="tab on">
     <div class="race-hdr"><div class="race-ttl">Type. Race. Win.</div><div class="race-sub">Beat bots or real players — earn coins</div></div>
-    <!-- Searching UI -->
+    
     <div class="searching-ui" id="searching-ui">
       <div class="search-title">🌐 Live Race</div>
       <div class="search-status" id="search-status">Searching for opponents...</div>
@@ -327,7 +324,7 @@ body.theme-disco{animation:hueRot 4s infinite}
     </div>
   </div>
 
-  <!-- SHOP -->
+
   <div id="tab-shop" class="tab">
     <div class="shop-hdr"><div class="shop-ttl">Theme Shop</div><div class="shop-bal">🪙 <span id="shop-coins">0</span> coins</div></div>
     <div class="sgrid" id="sgrid"></div>
@@ -342,7 +339,7 @@ body.theme-disco{animation:hueRot 4s infinite}
     </div>
   </div>
 
-  <!-- CHAT -->
+
   <div id="tab-chat" class="tab">
     <div class="chat-wrap">
       <div class="chat-ttl">Live Chat</div>
@@ -356,14 +353,14 @@ body.theme-disco{animation:hueRot 4s infinite}
     </div>
   </div>
 
-  <!-- LEADERBOARD -->
+ 
   <div id="tab-lb" class="tab">
     <div style="text-align:center;margin-bottom:24px"><div style="font-family:'Bebas Neue',cursive;font-size:2.8rem;letter-spacing:4px;color:var(--accent2)">Leaderboard</div><div style="color:var(--muted);letter-spacing:2px;font-size:.88rem">Top Coin Earners — Live Across All Devices</div></div>
     <div class="card-panel"><table class="lbtable"><thead><tr><th>#</th><th>Player</th><th>🪙 Coins</th><th>Themes</th></tr></thead><tbody id="lb-body"></tbody></table></div>
   </div>
 </div>
 
-<!-- Profile Modal -->
+
 <div class="moverlay" id="prof-overlay">
   <div class="modal profile">
     <div class="prof-top">
@@ -392,7 +389,7 @@ body.theme-disco{animation:hueRot 4s infinite}
   </div>
 </div>
 
-<!-- Admin Modal -->
+
 <div class="moverlay" id="adm-overlay">
   <div class="modal">
     <div class="mttl">⚙ Admin Panel</div><div class="msub">LiquidType Control Center</div>
@@ -405,7 +402,7 @@ body.theme-disco{animation:hueRot 4s infinite}
   </div>
 </div>
 
-<!-- DePoule Modal -->
+
 <div class="moverlay" id="dp-overlay">
   <div class="modal dp">
     <div class="mttl">🦆 DePoule Panel</div><div class="msub">Message Moderation</div>
@@ -426,7 +423,6 @@ const FB = {
   appId:             "1:765092878295:web:e63bf4df58cee3141d5d92"
 };
 
-// ── FIREBASE INIT ──────────────────────────────────────
 let db, FB_READY = false;
 function initFB() {
   if (FB.projectId === 'YOUR_PROJECT_ID') { document.getElementById('setup-banner').style.display='block'; return false; }
@@ -434,12 +430,12 @@ function initFB() {
   catch(e) { console.error('Firebase failed:',e); return false; }
 }
 
-// ── SESSION ────────────────────────────────────────────
+
 function getU() { return localStorage.getItem('lt_u') || null; }
 function setU(u) { u ? localStorage.setItem('lt_u',u) : localStorage.removeItem('lt_u'); }
 let UC = null; // user cache
 
-// ── DATA LAYER ─────────────────────────────────────────
+
 async function dbGetUser(u) {
   if (FB_READY) { const d=await db.collection('users').doc(u).get(); return d.exists?d.data():null; }
   return (JSON.parse(localStorage.getItem('lt_accs')||'[]')).find(a=>a.username===u)||null;
@@ -485,7 +481,7 @@ async function dbDelMsg(id) {
   chatCache=chatCache.filter(m=>m.id!==id); localStorage.setItem('lt_chat',JSON.stringify(chatCache)); renderChat(); if(admOpen)renderAdmChat(); if(dpOpen)renderDPChat();
 }
 
-// ── STREAK HELPER ─────────────────────────────────────
+
 function todayStr(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function calcStreak(acc){
@@ -496,7 +492,7 @@ function calcStreak(acc){
   return {streak:1,lastLoginDate:today};
 }
 
-// ── AUTH ───────────────────────────────────────────────
+
 function switchAuth(tab) {
   document.getElementById('tab-li').classList.toggle('on',tab==='login');
   document.getElementById('tab-re').classList.toggle('on',tab==='register');
@@ -543,7 +539,7 @@ function enterApp() {
   renderShop(); startChatListener(); renderLB();
 }
 
-// ── NAV ────────────────────────────────────────────────
+
 function goTab(id) {
   document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('on',['race','shop','chat','lb'][i]===id));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
@@ -560,7 +556,6 @@ function refreshCoins() {
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function esca(s){return String(s).replace(/'/g,"\\'")}
 
-// ── SOLO RACE ENGINE ────────────────────────────────────
 const PROMPTS=[
   "The quick brown fox jumps over the lazy dog near the river bank.",
   "Typing fast is a skill that takes practice and dedication every single day.",
@@ -633,11 +628,11 @@ async function soloFinished() {
   RS.finishOrder.push({type:'player',time:RS.endTime});
   RS.bots.forEach((b,i)=>{
     if(!b.finished){
-      // Bot hadn't finished yet — it finishes AFTER player
+   
       b.finished=true;
       b.finishTime=RS.endTime+Math.floor(Math.random()*6000)+500;
       RS.finishOrder.push({type:'bot',name:b.name,time:b.finishTime});
-      // Animate remaining bots to 100%
+    
       const bar=document.getElementById('bar-bot-'+i);
       if(bar){bar.style.width='100%';const l=document.getElementById('bpct-'+i);if(l)l.textContent='100%';}
     }
@@ -711,7 +706,7 @@ function renderPromptText() {
   el.innerHTML=html;
 }
 
-// Input listener
+
 document.addEventListener('DOMContentLoaded',()=>{
   const inp=document.getElementById('tinput');
   inp.addEventListener('paste',e=>e.preventDefault());
@@ -735,7 +730,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 });
 
-// ── LIVE RACE ENGINE ────────────────────────────────────
+
 let liveRS={searching:false,active:false,lobbyId:null,role:null,prompt:'',startTime:null,finished:false,opUser:null,lobbyUnsub:null,searchTimer:null,searchElapsed:0,searchDisplayIv:null,progressIv:null};
 
 function startLiveSearch() {
@@ -758,18 +753,17 @@ function startLiveSearch() {
 
 async function findOrCreateLobby() {
   try {
-    // Look for an open lobby (not hosted by this user, created within last 70s)
+    
     const cutoff=Date.now()-70000;
     const snap=await db.collection('lobbies').where('status','==','waiting').where('host','!=',getU()).orderBy('host').orderBy('createdAt').get();
     const fresh=snap.docs.filter(d=>d.data().createdAt>cutoff);
     if(fresh.length>0) {
-      // Join existing lobby
       const lobbyDoc=fresh[0]; const startAt=Date.now()+4000;
       await db.collection('lobbies').doc(lobbyDoc.id).update({guest:getU(),status:'racing',startAt});
       liveRS.lobbyId=lobbyDoc.id; liveRS.role='guest'; liveRS.opUser=lobbyDoc.data().host;
       listenLobby(lobbyDoc.id);
     } else {
-      // Create new lobby
+    
       const prompt=PROMPTS[Math.floor(Math.random()*PROMPTS.length)];
       const ref=db.collection('lobbies').doc();
       await ref.set({id:ref.id,host:getU(),hostPct:0,hostWpm:0,hostDone:false,hostTime:null,guest:null,guestPct:0,guestWpm:0,guestDone:false,guestTime:null,prompt,status:'waiting',startAt:null,createdAt:Date.now()});
@@ -790,7 +784,7 @@ function listenLobby(id) {
 let liveStarted=false;
 function handleLobbySnap(lobby) {
   if(lobby.status==='racing'&&!liveStarted&&liveRS.searching) {
-    // Opponent found / race starting
+    
     liveStarted=true;
     liveRS.opUser=liveRS.role==='host'?lobby.guest:lobby.host;
     liveRS.prompt=lobby.prompt; RS.prompt=lobby.prompt; RS.mode='live';
@@ -806,15 +800,15 @@ function handleLobbySnap(lobby) {
       countdown(()=>beginLive(lobby));
     }, Math.max(0,delay-3000));
   } else if(lobby.status==='racing'&&liveRS.active) {
-    // Update opponent bar
+  
     const myRole=liveRS.role, opRole=myRole==='host'?'guest':'host';
     const opPct=lobby[opRole+'Pct']||0, opWpm=lobby[opRole+'Wpm']||0;
     const bar=document.getElementById('bar-opp');
     if(bar){bar.style.width=opPct+'%';document.getElementById('pct-opp').textContent=opPct+'%';}
     document.getElementById('pwpm-opp').textContent=opWpm+' wpm';
-    // Check if opponent finished
+  
     if(lobby[opRole+'Done']&&!RS.finished) {
-      // Opponent beat us — end our race
+      
       setTimeout(()=>{ if(!RS.finished) liveFinished(true); },500);
     }
   }
@@ -870,7 +864,7 @@ function liveRSreset() {
 }
 
 function cancelLiveSearch(msg='Search cancelled.') {
-  // Delete lobby if we created it
+ 
   if(liveRS.lobbyId&&liveRS.role==='host'){try{db.collection('lobbies').doc(liveRS.lobbyId).delete();}catch(e){}}
   liveRSreset(); RS.mode='solo';
   document.getElementById('searching-ui').classList.remove('on');
@@ -885,7 +879,7 @@ function liveCleanup() {
   liveRSreset();
 }
 
-// ── SHOP / THEMES ───────────────────────────────────────
+
 const THEMES=[
   {id:'default',name:'Red Black Gradient',desc:'The classic LiquidType look.',price:0,prev:'prev-default'},
   {id:'disco',name:'Disco',desc:'Full rainbow color cycling.',price:200,prev:'prev-disco'},
@@ -943,7 +937,7 @@ function lghtn(h,a){const n=parseInt(h.replace('#',''),16);return `#${Math.min(2
 function gmPreview(){const c1=document.getElementById('gm1').value,c2=document.getElementById('gm2').value,c3=document.getElementById('gm3').value;document.getElementById('gmprev').style.background=`linear-gradient(135deg,${c1},${c2},${c3})`;}
 async function applyGradient(){const c={c1:document.getElementById('gm1').value,c2:document.getElementById('gm2').value,c3:document.getElementById('gm3').value,ca:document.getElementById('gma').value};if(UC)UC.gradientColors=c;await dbUpdateUser(getU(),{gradientColors:c,activeTheme:'custom'});applyGradVars(c);applyTheme('custom',c);showToast('Gradient applied! ✨');}
 
-// ── CHAT ────────────────────────────────────────────────
+
 async function sendChat(){
   const inp=document.getElementById('cinput'), text=inp.value.trim();
   if(!text||!getU())return;
@@ -960,7 +954,6 @@ function renderChat(){
 }
 function scrollMsgs(){const e=document.getElementById('msgs');e.scrollTop=e.scrollHeight;}
 
-// ── LEADERBOARD ─────────────────────────────────────────
 async function renderLB(){
   const tbody=document.getElementById('lb-body');
   tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:18px;color:var(--muted)">Loading…</td></tr>';
@@ -969,7 +962,6 @@ async function renderLB(){
   tbody.innerHTML=accs.map((a,i)=>`<tr><td><span class="lbrank ${['r1','r2','r3',''][Math.min(i,3)]}">${['🥇','🥈','🥉','#'+(i+1)][Math.min(i,3)]}</span></td><td class="lbname">${esc(a.username)}</td><td class="lbcoins">🪙 ${a.coins||0}</td><td style="color:var(--muted);font-size:.82rem">${(a.themes||[]).length} theme${(a.themes||[]).length!==1?'s':''}</td></tr>`).join('');
 }
 
-// ── ADMIN ────────────────────────────────────────────────
 const ADMIN_PW='finnshows'; let admOpen=false;
 function openAdmin(){document.getElementById('adm-overlay').classList.add('on');document.getElementById('adm-pw').value='';document.getElementById('adm-err').textContent='';if(admOpen)renderAdm();}
 function closeAdmin(){document.getElementById('adm-overlay').classList.remove('on');}
@@ -988,14 +980,14 @@ async function admDel(u){if(!confirm(`Delete "${u}"?`))return;await dbDeleteUser
 function renderAdmChat(){const el=document.getElementById('adm-chat');if(!chatCache.length){el.innerHTML='<div class="empty">No messages.</div>';return;}el.innerHTML=chatCache.map(m=>`<div class="mcmsg"><div class="mcmsg-txt"><span class="mcuser">${esc(m.username)}</span><span style="color:var(--muted);font-size:.72rem">${new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span><br>${esc(m.text)}</div><button class="bsm rm" onclick="rmMsg('${m.id}','adm')">🗑 Remove</button></div>`).join('');}
 async function rmMsg(id,src){await dbDelMsg(id);if(src==='adm')renderAdmChat();else renderDPChat();showToast('Message removed.');}
 
-// ── DEPOULE ──────────────────────────────────────────────
+
 const DP_PW='Falice'; let dpOpen=false;
 function openDP(){document.getElementById('dp-overlay').classList.add('on');document.getElementById('dp-pw').value='';document.getElementById('dp-err').textContent='';if(dpOpen)renderDPChat();}
 function closeDP(){document.getElementById('dp-overlay').classList.remove('on');}
 function tryDP(){const v=document.getElementById('dp-pw').value;if(v===DP_PW){dpOpen=true;document.getElementById('dp-lock').style.display='none';document.getElementById('dp-open').classList.add('on');renderDPChat();}else document.getElementById('dp-err').textContent='Wrong password.';}
 function renderDPChat(){const el=document.getElementById('dp-chat');if(!chatCache.length){el.innerHTML='<div class="empty">No messages to moderate.</div>';return;}el.innerHTML=chatCache.map(m=>`<div class="mcmsg"><div class="mcmsg-txt"><span class="mcuser">${esc(m.username)}</span><span style="color:var(--muted);font-size:.72rem">${new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span><br>${esc(m.text)}</div><button class="bsm rm" onclick="rmMsg('${m.id}','dp')">🗑 Remove</button></div>`).join('');}
 
-// ── PROFILE MODAL ────────────────────────────────────────
+
 const THEME_COLORS={default:'#cc0000',disco:'#ff00ff',ocean:'#00aaff',synthwave:'#ff00cc',midnight:'#6666ff',toxic:'#00ff44',sunset:'#ff6600',custom:'#00c8ff'};
 const RANK_BADGES=[
   {min:0,label:'Newcomer',color:'rgba(150,150,150,.3)',border:'rgba(150,150,150,.4)'},
@@ -1038,13 +1030,13 @@ async function openProfile(username){
   document.getElementById('prof-streak').textContent=streak;
   document.getElementById('prof-themes').textContent=themes.length;
 
-  // Theme dots
+
   const themeRow=document.getElementById('prof-theme-row');
   themeRow.innerHTML=`<span class="prof-theme-lbl">Themes:</span>`+
     themes.map(t=>`<div class="prof-theme-dot" title="${t}" style="background:${THEME_COLORS[t]||'#888'}"></div>`).join('')+
     `<span class="prof-theme-lbl" style="margin-left:2px">${themes.map(t=>t.charAt(0).toUpperCase()+t.slice(1)).join(', ')}</span>`;
 
-  // Actions
+
   const actEl=document.getElementById('prof-actions');
   if(isSelf){
     actEl.innerHTML=`<div class="prof-self-note">This is your profile! Earn coins by racing 🏁</div>`;
@@ -1084,19 +1076,19 @@ async function giftCoins(){
   closeProfile();
 }
 
-// ── TOAST ────────────────────────────────────────────────
+
 let tTimer=null;
 function showToast(msg){let t=document.querySelector('.toast');if(t)t.remove();t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);if(tTimer)clearTimeout(tTimer);tTimer=setTimeout(()=>t&&t.remove(),2800);}
 
-// modal overlay close
+
 document.getElementById('prof-overlay').addEventListener('click',function(e){if(e.target===this)closeProfile()});
 document.getElementById('adm-overlay').addEventListener('click',function(e){if(e.target===this)closeAdmin()});
 document.getElementById('dp-overlay').addEventListener('click',function(e){if(e.target===this)closeDP()});
 
-// cleanup on page leave
+
 window.addEventListener('beforeunload',()=>{if(liveRS.lobbyId&&liveRS.role==='host'&&liveRS.searching){try{db.collection('lobbies').doc(liveRS.lobbyId).delete();}catch(e){}}});
 
-// ── INIT ─────────────────────────────────────────────────
+
 async function init() {
   initFB();
   gmPreview();
@@ -1113,3 +1105,4 @@ init();
 </script>
 </body>
 </html>
+NGA WHY ARE YOU LOOKING AT MY SOURCE CODE GGOBS???
