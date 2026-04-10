@@ -1,15 +1,3 @@
-// ╔══════════════════════════════════════════════════════╗
-//  FIREBASE CONFIG
-//  1. Go to https://console.firebase.google.com/
-//  2. Create project → Add web app → copy config below
-//  3. Firestore rules (Database → Rules):
-//     rules_version = '2';
-//     service cloud.firestore {
-//       match /databases/{database}/documents {
-//         match /{document=**} { allow read, write: if true; }
-//       }
-//     }
-// ╚══════════════════════════════════════════════════════╝
 const FB = {
   apiKey:            "AIzaSyBgppLaWv-3M9IsCzUtDD5Z8pqUxPtdPLk",
   authDomain:        "liquidtipe.firebaseapp.com",
@@ -19,7 +7,7 @@ const FB = {
   appId:             "1:765092878295:web:e63bf4df58cee3141d5d92"
 };
 
-// ── FIREBASE INIT ──────────────────────────────────────
+
 let db, FB_READY = false;
 function initFB() {
   if (FB.projectId === 'YOUR_PROJECT_ID') { document.getElementById('setup-banner').style.display='block'; return false; }
@@ -27,7 +15,7 @@ function initFB() {
   catch(e) { console.error('Firebase failed:',e); return false; }
 }
 
-// ── SESSION ────────────────────────────────────────────
+
 function getU() { return localStorage.getItem('lt_u') || null; }
 function setU(u) { u ? localStorage.setItem('lt_u',u) : localStorage.removeItem('lt_u'); }
 let UC = null; // user cache
@@ -159,18 +147,18 @@ function esca(s){return String(s).replace(/'/g,"\\'")}
 
 // ── SOLO RACE ENGINE ────────────────────────────────────
 const PROMPTS=[
-  "The quick brown fox jumps over the lazy dog near the river bank.",
-  "Typing fast is a skill that takes practice and dedication every single day.",
-  "Liquid flows freely through every crack and crevice with unstoppable momentum.",
-  "Speed is nothing without accuracy so always focus on correct keystrokes.",
-  "The stars burned bright against the endless dark canvas of the midnight sky.",
-  "Every great journey begins with a single keystroke on the path to mastery.",
-  "Rain fell silently on the cobblestone streets as the city lights shimmered below.",
-  "Champions are made in the moments when they want to quit but push through anyway.",
-  "Technology shapes the future and those who type fast shape technology itself.",
-  "The wind whispered through the ancient trees carrying secrets of forgotten worlds.",
-  "Persistence is the hidden engine beneath every great achievement in history.",
-  "Silence filled the room as fingers danced across the illuminated keyboard tonight."
+  "Falice is the perfect combonation!",
+  "FREEDOM!!!!!",
+  "I-- i- uhh i uhh- fogo- my lin- plea-",
+  ";)",
+  "DOODLEHONEYOWNSTHESKY",
+  "Im in the thick of it everybody knows, They know me where it snows I skate in and they froze.",
+  "Sad Music (()()()()()()()",
+  "If scripting is your power then what are you without it?",
+  "Freed or Jeed. Hmm idk dawg.",
+  "The wind whispers "Pancakes in my ears",
+  "JOE BIDEN'S SONE",
+  "Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule "
 ];
 const BOT_NAMES=['Ytggobs','TheFinnyShow','Doodlehoney2018','Marco'];
 const COIN_REWARDS=[50,30,15,5];
