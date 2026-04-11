@@ -64,13 +64,115 @@ body.theme-disco{animation:hueRot 4s infinite}
 #setup-banner a{color:#fd8;text-decoration:underline}
 
 /* ── LOADING ── */
-#loading{position:fixed;inset:0;z-index:2000;background:#000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
-.ld-logo{font-family:'Bebas Neue',cursive;font-size:3rem;letter-spacing:3px;color:#cc0000}
-.ld-dots{display:flex;gap:6px}
-.ld-status{font-size:.7rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px;font-weight:600}
-.ld-dot{width:8px;height:8px;border-radius:50%;background:#cc0000;animation:db 1s infinite}
-.ld-dot:nth-child(2){animation-delay:.15s}.ld-dot:nth-child(3){animation-delay:.3s}
-@keyframes db{0%,80%,100%{opacity:.2}40%{opacity:1}}
+#loading {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: radial-gradient(circle at center, #1a0000 0%, #000 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+  transition: opacity 0.4s ease;
+}
+.ld-logo {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 4.5rem;
+  letter-spacing: 10px;
+  color: #cc0000;
+  text-shadow: 0 0 20px rgba(204,0,0,0.6);
+  animation: ldLogoGlow 0.8s ease-in-out infinite alternate;
+}
+.ld-dots {
+  display: flex;
+  gap: 12px;
+}
+.ld-status {
+  font-size: .75rem;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-top: 5px;
+}
+.ld-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #cc0000;
+  box-shadow: 0 0 15px rgba(204,0,0,0.5);
+  animation: ldDotBounce 1.4s infinite ease-in-out both;
+}
+.ld-dot:nth-child(1) { animation-delay: -0.32s; }
+.ld-dot:nth-child(2) { animation-delay: -0.16s; }
+
+/* ── STYLISH LOADING COMPONENTS ── */
+.ld-tip-wrap { margin-top: 35px; height: 30px; display: flex; align-items: center; justify-content: center; position: relative; width: 100%; }
+.ld-tip { font-size: 1rem; color: #fff; opacity: 0; transform: translateY(10px); transition: all 0.5s ease; position: absolute; text-align: center; max-width: 80%; letter-spacing: 1px; }
+.ld-tip.active { opacity: 0.7; transform: translateY(0); }
+.ld-btn { position: absolute; bottom: 50px; padding: 12px 35px; background: rgba(204,0,0,0.1); border: 1px solid #cc0000; color: #fff; border-radius: 4px; font-family: 'Rajdhani', sans-serif; text-transform: uppercase; letter-spacing: 3px; font-weight: 700; cursor: pointer; transition: 0.3s; opacity: 0; pointer-events: none; }
+.ld-btn.show { opacity: 1; pointer-events: auto; }
+.ld-btn:hover { background: #cc0000; box-shadow: 0 0 25px rgba(204,0,0,0.6); transform: translateY(-2px); }
+#ld-start { background: #cc0000; box-shadow: 0 0 20px rgba(204,0,0,0.4); }
+.ld-part {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  color: var(--accent);
+  opacity: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: -1;
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+
+/* ── MOVING PARTS ANIMATION ── */
+.loading-anim-active .ld-logo { animation: ldLogoMove 4s infinite alternate cubic-bezier(0.45, 0, 0.55, 1); }
+.loading-anim-active .ld-dots { animation: ldDotsMove 3s infinite alternate-reverse ease-in-out; }
+.loading-anim-active .ld-part { opacity: 0.12; }
+
+@keyframes ldLogoMove {
+  0% { transform: translate(0, 0) scale(1) rotate(0); }
+  33% { transform: translate(-60px, 30px) scale(0.9) rotate(-5deg); }
+  66% { transform: translate(50px, -40px) scale(1.1) rotate(4deg); }
+  100% { transform: translate(0, 0) scale(1) rotate(0); }
+}
+@keyframes ldDotsMove {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(60px, 40px); }
+  100% { transform: translate(-60px, -20px); }
+}
+@keyframes ldShot {
+  0% { transform: translate(var(--sx), var(--sy)) rotate(var(--sr)); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translate(var(--ex), var(--ey)) rotate(var(--er)); opacity: 0; }
+}
+
+/* ── ACCESSIBILITY: REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+  .ld-logo, .ld-dot, .ld-part, .loading-anim-active .ld-logo, .loading-anim-active .ld-dots {
+    animation: none !important;
+    transition: none !important;
+  }
+  .ld-part {
+    opacity: 0.05 !important;
+    transform: none !important;
+  }
+}
+
+@keyframes ldLogoGlow {
+  from { text-shadow: 0 0 15px rgba(204,0,0,0.4); transform: scale(1); }
+  to { text-shadow: 0 0 40px rgba(204,0,0,0.8), 0 0 70px rgba(204,0,0,0.3); transform: scale(1.08); }
+}
+@keyframes ldDotBounce {
+  0%, 80%, 100% { transform: scale(0.3); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
 
 /* ── AUTH ── */
 #auth{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:1000;background:linear-gradient(135deg,#000 0%,#1a0000 60%,#000 100%)}

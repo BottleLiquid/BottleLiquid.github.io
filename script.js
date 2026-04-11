@@ -909,26 +909,136 @@ document.getElementById('dp-overlay').addEventListener('click',function(e){if(e.
 // cleanup on page leave
 window.addEventListener('beforeunload',()=>{if(liveRS.lobbyId&&liveRS.role==='host'&&liveRS.searching){try{db.collection('lobbies').doc(liveRS.lobbyId).delete();}catch(e){}}});
 
+const TIPS = [
+  "Accuracy is more important than speed!",
+  "Type the words exactly as they appear.",
+  "Challenge your friends in Live Races!",
+  "Earn coins to unlock cool new themes.",
+  "Pet DePoule carefully... he might bite!",
+  "Custom gradients allow you to style your game.",
+  "Check the shop for limited edition rewards!",
+  "Consistency is key to keeping your streak alive."
+];
+
+function startLoadingSequence(isLoggedIn) {
+  const loading = document.getElementById('loading');
+  const status = document.getElementById('ld-status');
+  if (status) status.style.display = 'none';
+
+  // Accessibility Check: Respect user system settings for motion
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  loading.classList.add('loading-anim-active');
+
+  // Particle Spawner
+  const words = ["SPEED", "WPM", "ACCURACY", "RACE", "LIQUID", "DEPOULE", "COINS", "STREAK"];
+  let shootingToCenter = false;
+  const modeToggleIv = setInterval(() => { shootingToCenter = !shootingToCenter; }, 1200);
+  // Reduce count significantly if reduced motion is requested
+  const maxParts = prefersReducedMotion ? 10 : ((navigator.hardwareConcurrency || 4) >= 8 ? 200 : 100);
+
+  const spawnPart = () => {
+    const p = document.createElement('div');
+    p.className = 'ld-part';
+    p.textContent = words[Math.floor(Math.random() * words.length)];
+    
+    const angle = Math.random() * Math.PI * 2;
+    const dist = window.innerWidth > 1000 ? 1000 : 600;
+    const sx = Math.cos(angle) * dist;
+    const sy = Math.sin(angle) * dist;
+
+    let ex, ey;
+    if (shootingToCenter) {
+      ex = 0; ey = 0;
+    } else {
+      // Shoot across to roughly the opposite side
+      const oppAngle = angle + Math.PI + (Math.random() - 0.5);
+      ex = Math.cos(oppAngle) * dist;
+      ey = Math.sin(oppAngle) * dist;
+    }
+
+    p.style.fontSize = (Math.random() * 1.4 + 0.5) + 'rem';
+    p.style.setProperty('--sx', sx + 'px');
+    p.style.setProperty('--sy', sy + 'px');
+    p.style.setProperty('--ex', ex + 'px');
+    p.style.setProperty('--ey', ey + 'px');
+    p.style.setProperty('--sr', (Math.random() * 720 - 360) + 'deg');
+    p.style.setProperty('--er', (Math.random() * 720 - 360) + 'deg');
+    
+    // Slower duration for reduced motion
+    const dur = prefersReducedMotion ? (Math.random() * 1 + 1) : (Math.random() * 0.2 + 0.25);
+    p.style.animation = `ldShot ${dur}s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`;
+    loading.appendChild(p);
+    setTimeout(() => p.remove(), dur * 1000);
+  };
+
+  const batchSize = prefersReducedMotion ? 1 : Math.ceil(maxParts / 10);
+  const spawnIv = setInterval(() => {
+    for(let i=0; i<batchSize; i++) spawnPart();
+  }, prefersReducedMotion ? 500 : 40);
+
+  const tipWrap = document.createElement('div');
+  tipWrap.className = 'ld-tip-wrap';
+  loading.appendChild(tipWrap);
+
+  const skipBtn = document.createElement('button');
+  skipBtn.id = 'ld-skip';
+  skipBtn.className = 'ld-btn';
+  skipBtn.textContent = 'Skip Animation';
+  loading.appendChild(skipBtn);
+
+  const startBtn = document.createElement('button');
+  startBtn.id = 'ld-start';
+  startBtn.className = 'ld-btn';
+  startBtn.textContent = 'Enter The Game';
+  loading.appendChild(startBtn);
+
+  let tipIdx = 0;
+  const showNextTip = () => {
+    tipWrap.innerHTML = `<div class="ld-tip active">${TIPS[tipIdx]}</div>`;
+    tipIdx = (tipIdx + 1) % TIPS.length;
+  };
+  
+  showNextTip();
+  const tipIv = setInterval(showNextTip, 2500);
+  setTimeout(() => skipBtn.classList.add('show'), 1500);
+
+  const endAnimation = () => {
+    clearInterval(spawnIv);
+    clearInterval(modeToggleIv);
+    clearInterval(tipIv);
+    loading.classList.remove('loading-anim-active');
+    skipBtn.classList.remove('show');
+    startBtn.classList.add('show');
+    tipWrap.innerHTML = `<div class="ld-tip active">System Initialized</div>`;
+  };
+
+  const animTimeout = setTimeout(endAnimation, 9000);
+  skipBtn.onclick = () => { clearTimeout(animTimeout); endAnimation(); };
+  startBtn.onclick = () => {
+    loading.style.opacity = '0';
+    setTimeout(() => {
+      loading.style.display = 'none';
+      if (isLoggedIn) enterApp(); else document.getElementById('auth').style.display = 'flex';
+    }, 400);
+  };
+}
+
 // ── INIT ─────────────────────────────────────────────────
 async function init() {
   const setStatus = (msg) => { const el = document.getElementById('ld-status'); if(el) el.textContent = msg; };
-
   setStatus('Connecting to database...');
   initFB();
-
   setStatus('Loading resources...');
   gmPreview();
-
   setStatus('Checking session...');
-  const cur=getU();
+  const cur = getU(); let isLoggedIn = false;
   if(cur){
     setStatus(`Fetching profile: ${cur}...`);
-    const acc=await dbGetUser(cur);
-    if(acc){UC={...acc};document.getElementById('loading').style.display='none';enterApp();return;}
-    else setU(null);
+    const acc = await dbGetUser(cur);
+    if(acc){ UC={...acc}; isLoggedIn = true; } else setU(null);
   }
   setStatus('Ready.');
-  document.getElementById('loading').style.display='none';
-  document.getElementById('auth').style.display='flex';
+  startLoadingSequence(isLoggedIn);
 }
 init();

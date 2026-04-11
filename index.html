@@ -50,6 +50,7 @@
       <button class="ntab" onclick="goTab('shop')">🛒 Shop</button>
       <button class="ntab" onclick="goTab('chat')">💬 Chat</button>
       <button class="ntab" onclick="goTab('lb')">🏆 Leaderboard</button>
+      <div class="dm-ntab-wrap"><button class="ntab" onclick="goTab('dm')">✉ DMs</button><div class="dm-notif" id="dm-notif"></div></div>
     </div>
     <div class="nav-r">
       <div class="coins">🪙 <span id="coin-count">0</span></div>
@@ -154,6 +155,31 @@
   <div id="tab-lb" class="tab">
     <div style="text-align:center;margin-bottom:24px"><div style="font-family:'Bebas Neue',cursive;font-size:2.8rem;letter-spacing:4px;color:var(--accent2)">Leaderboard</div><div style="color:var(--muted);letter-spacing:2px;font-size:.88rem">Top Coin Earners — Live Across All Devices</div></div>
     <div class="card-panel"><table class="lbtable"><thead><tr><th>#</th><th>Player</th><th>🪙 Coins</th><th>Themes</th></tr></thead><tbody id="lb-body"></tbody></table></div>
+  </div>
+
+  <!-- DMS -->
+  <div id="tab-dm" class="tab">
+    <div class="dm-layout">
+      <div class="dm-sidebar">
+        <div class="dm-sidebar-hdr">
+          <div class="dm-sidebar-title">✉ Direct Messages</div>
+          <div class="dm-sidebar-sub">Your private conversations</div>
+        </div>
+        <div class="dm-list" id="dm-list">
+          <div class="empty" style="padding:24px;text-align:center;font-size:.88rem">No conversations yet.<br><span style="color:var(--muted);font-size:.8rem">Open a profile and click ✉ Send Message</span></div>
+        </div>
+      </div>
+      <div class="dm-main">
+        <div class="dm-convo-hdr" id="dm-convo-hdr">
+          <div style="color:var(--muted);font-size:.9rem">Select a conversation or start one from a player's profile</div>
+        </div>
+        <div class="dm-msgs" id="dm-msgs"></div>
+        <div class="dm-input-wrap" id="dm-input-wrap" style="display:none">
+          <input class="dm-input" id="dm-input" placeholder="Type a message…" maxlength="500" onkeydown="if(event.key==='Enter')sendDM()">
+          <button class="dm-send-btn" onclick="sendDM()">Send</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
