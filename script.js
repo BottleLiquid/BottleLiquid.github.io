@@ -293,7 +293,8 @@ async function soloFinished() {
   const wpm=Math.round(RS.prompt.trim().split(/\s+/).length/(elapsed/60000));
   const acc=Math.max(0,Math.round(((RS.prompt.length-RS.errors)/RS.prompt.length)*100));
   const rewards = RS.raceType === 'depoule' ? REWARDS_DEPOULE : REWARDS_NORMAL;
-  const coins=rewards[Math.min(place-1,3)];
+  const baseCoins=rewards[Math.min(place-1,3)];
+  const coins=Math.round(baseCoins * (acc / 100));
   if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins();}
   await checkAndGrantSecretThemes(wpm);
   await checkBadges({wpm,place,isLive:false,firstRace:!(UC.badges||[]).includes('first_race')});
@@ -513,7 +514,8 @@ async function liveFinished(opponentWon=false) {
   const acc=Math.max(0,Math.round(((RS.prompt.length-RS.errors)/RS.prompt.length)*100));
   try { await db.collection('lobbies').doc(liveRS.lobbyId).update({[myRole+'Done']:true,[myRole+'Time']:RS.endTime}); } catch(e){}
   const place=opponentWon?2:1;
-  const coins=place===1?75:20;
+  const baseCoins=place===1?75:20;
+  const coins=Math.round(baseCoins * (acc / 100));
   if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins();}
   await checkAndGrantSecretThemes(wpm);
   await checkBadges({wpm,place,isLive:true});
