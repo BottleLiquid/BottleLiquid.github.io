@@ -72,6 +72,129 @@ async function dbEditMsg(id, newText) {
   const m=chatCache.find(x=>x.id===id); if(m){m.text=newText;m.edited=true;} localStorage.setItem('lt_chat',JSON.stringify(chatCache)); renderChat(); if(admOpen)renderAdmChat(); if(dpOpen)renderDPChat();
 }
 
+// ── TEAMS SYSTEM ───────────────────────────────────────
+let teamCache = null;
+let teamChatCache = [];
+let teamChatUnsub = null;
+
+// Team data layer
+async function dbGetTeam(teamId) {
+  if (FB_READY) { const d = await db.collection('teams').doc(teamId).get(); return d.exists ? d.data() : null; }
+  return (JSON.parse(localStorage.getItem('lt_teams')||'[]')).find(t=>t.id===teamId)||null;
+}
+async function dbAllTeams() {
+  if (FB_READY) { const s = await db.collection('teams').get(); return s.docs.map(d=>d.data()); }
+  return JSON.parse(localStorage.getItem('lt_teams')||'[]');
+}
+async function dbCreateTeam(data) {
+  if (FB_READY) { await db.collection('teams').doc(data.id).set(data); return; }
+  const t = JSON.parse(localStorage.getItem('lt_teams')||'[]'); t.push(data); localStorage.setItem('lt_teams',JSON.stringify(t));
+}
+async function dbUpdateTeam(teamId, changes) {
+  if (FB_READY) { await db.collection('teams').doc(teamId).update(changes); }
+  else { const t=JSON.parse(localStorage.getItem('lt_teams')||'[]'),i=t.findIndex(x=>x.id===teamId); if(i>=0){Object.assign(t[i],changes);localStorage.setItem('lt_teams',JSON.stringify(t));} }
+  if (teamCache && teamCache.id === teamId) Object.assign(teamCache, changes);
+}
+async function dbDeleteTeam(teamId) {
+  if (FB_READY) { await db.collection('teams').doc(teamId).delete(); return; }
+  const t = JSON.parse(localStorage.getItem('lt_teams')||'[]').filter(x=>x.id!==teamId); localStorage.setItem('lt_teams',JSON.stringify(t));
+}
+
+// Team chat functions
+// Token incremented every time the listener changes — lets async callbacks
+// detect they are stale and bail out rather than overwriting current data.
+let teamChatToken = 0;
+
+function startTeamChatListener(teamId) {
+  // Cancel any existing listener first
+  if (teamChatUnsub) try{teamChatUnsub();}catch(e){clearInterval(teamChatUnsub);}
+  teamChatUnsub = null;
+  teamChatCache = [];
+  renderTeamChat(); // clear display immediately
+
+  if (!teamId) return; // no team, nothing to listen to
+
+  // Bump token so any in-flight async calls from the old listener
+  // know they are stale and must not write to teamChatCache.
+  const myToken = ++teamChatToken;
+
+  if (FB_READY) {
+    // .limit() works without orderBy (no composite index needed).
+    // We sort by ts on the client side after receiving docs.
+    teamChatUnsub = db.collection('team_messages')
+      .where('teamId', '==', teamId)
+      .limit(100)
+      .onSnapshot(
+        snap => {
+          if (myToken !== teamChatToken) return; // stale — a newer listener took over
+          teamChatCache = snap.docs
+            .map(d => d.data())
+            .filter(m => m.teamId === teamId)  // extra client-side guard
+            .sort((a, b) => a.ts - b.ts);
+          renderTeamChat();
+        },
+        err => {
+          console.error('Team chat listener error:', err);
+        }
+      );
+  } else {
+    const poll = () => {
+      if (myToken !== teamChatToken) return; // stale
+      teamChatCache = (JSON.parse(localStorage.getItem('lt_team_chat')||'[]'))
+        .filter(m => m.teamId === teamId)
+        .sort((a, b) => a.ts - b.ts);
+      renderTeamChat();
+    };
+    poll();
+    teamChatUnsub = setInterval(poll, 2500);
+  }
+}
+async function dbAddTeamMsg(m) {
+  if (FB_READY) { await db.collection('team_messages').doc(m.id).set(m); return; }
+  const c = JSON.parse(localStorage.getItem('lt_team_chat')||'[]'); c.push(m); if(c.length>500)c.splice(0,c.length-500); localStorage.setItem('lt_team_chat',JSON.stringify(c)); teamChatCache=c.filter(x=>x.teamId===m.teamId); renderTeamChat();
+}
+
+// Default rank structure
+const DEFAULT_RANKS = [
+  { id: 'president', name: 'President', level: 100, permissions: { manageMembers: true, manageTreasury: true, buyUpgrades: true, editSettings: true, deleteMessages: true } },
+  { id: 'vice', name: 'Vice President', level: 90, permissions: { manageMembers: true, manageTreasury: true, buyUpgrades: true, editSettings: false, deleteMessages: true } },
+  { id: 'admiral', name: 'Admiral', level: 80, permissions: { manageMembers: true, manageTreasury: false, buyUpgrades: false, editSettings: false, deleteMessages: true } },
+  { id: 'captain', name: 'Captain', level: 70, permissions: { manageMembers: false, manageTreasury: false, buyUpgrades: false, editSettings: false, deleteMessages: false } },
+  { id: 'member', name: 'Member', level: 50, permissions: { manageMembers: false, manageTreasury: false, buyUpgrades: false, editSettings: false, deleteMessages: false } }
+];
+
+// Team upgrade definitions
+const TEAM_UPGRADES = [
+  { id: 'coin_boost_1', name: 'Coin Boost I', desc: '+5% coins for all members', cost: 1000, effect: { type: 'coinBoost', value: 5 } },
+  { id: 'coin_boost_2', name: 'Coin Boost II', desc: '+10% coins for all members', cost: 2500, effect: { type: 'coinBoost', value: 10 }, requires: 'coin_boost_1' },
+  { id: 'coin_boost_3', name: 'Coin Boost III', desc: '+15% coins for all members', cost: 5000, effect: { type: 'coinBoost', value: 15 }, requires: 'coin_boost_2' },
+  { id: 'treasury_cap_1', name: 'Treasury Expansion I', desc: 'Increase treasury cap to 20k', cost: 800, effect: { type: 'treasuryCap', value: 20000 } },
+  { id: 'treasury_cap_2', name: 'Treasury Expansion II', desc: 'Increase treasury cap to 50k', cost: 2000, effect: { type: 'treasuryCap', value: 50000 }, requires: 'treasury_cap_1' },
+  { id: 'member_slots_1', name: 'Team Size I', desc: 'Increase max members to 15', cost: 1500, effect: { type: 'maxMembers', value: 15 } },
+  { id: 'member_slots_2', name: 'Team Size II', desc: 'Increase max members to 25', cost: 3500, effect: { type: 'maxMembers', value: 25 }, requires: 'member_slots_1' },
+  { id: 'custom_theme', name: 'Custom Team Theme', desc: 'Unlock custom team theme', cost: 3000, effect: { type: 'customTheme', value: true } }
+];
+
+// Get team member bonus (10% per member)
+function getTeamBonus() {
+  if (!teamCache) return 0;
+  const memberCount = (teamCache.members || []).length;
+  return memberCount * 10; // 10% per member
+}
+
+// Get total team coin boost from upgrades
+function getTeamCoinBoost() {
+  if (!teamCache) return 0;
+  let boost = 0;
+  (teamCache.upgrades || []).forEach(upgradeId => {
+    const upgrade = TEAM_UPGRADES.find(u => u.id === upgradeId);
+    if (upgrade && upgrade.effect.type === 'coinBoost') {
+      boost += upgrade.effect.value;
+    }
+  });
+  return boost;
+}
+
 // ── STREAK HELPER ─────────────────────────────────────
 function todayStr(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function yesterdayStr(){const d=new Date();d.setDate(d.getDate()-1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
@@ -117,7 +240,8 @@ function doLogout() {
   if(chatUnsub)try{chatUnsub();}catch(e){clearInterval(chatUnsub);}chatUnsub=null;
   if(dmListUnsub)try{dmListUnsub();}catch(e){}dmListUnsub=null;
   if(dmConvoUnsub)try{dmConvoUnsub();}catch(e){}dmConvoUnsub=null;
-  activeDMId=null; dmCache={};
+  if(teamChatUnsub)try{teamChatUnsub();}catch(e){clearInterval(teamChatUnsub);}teamChatUnsub=null;
+  activeDMId=null; dmCache={}; teamCache=null;
   document.getElementById('app').style.display='none';
   document.getElementById('auth').style.display='none';
   showWelcomeScreen();
@@ -136,14 +260,17 @@ function enterApp() {
   loadDPThemesIntoShop().then(()=>{if(UC&&UC.activeTheme&&UC.activeTheme.startsWith("dp_"))applyDPTheme(UC.activeTheme);});
   if(UC.activeMods&&UC.activeMods.length){activeMods=new Set(UC.activeMods);applyAllMods();}
   setTimeout(async()=>{await checkAndGrantSecretThemes(0);await checkBadges({streak:UC.streak||1});},1500);
+  // Load team data if user is in a team
+  if(UC.teamId){dbGetTeam(UC.teamId).then(t=>{if(t)teamCache=t;});}
 }
 
 // ── NAV ────────────────────────────────────────────────
 function goTab(id) {
-  document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('on',['home','race','shop','chat','lb','dm'][i]===id));
+  document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('on',['home','race','teams','shop','chat','lb','dm'][i]===id));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('tab-'+id).classList.add('on');
   if(id==='home') renderHome();
+  if(id==='teams') renderTeamsTab();
   if(id==='shop'){renderShop();}
   if(id==='chat')setTimeout(scrollMsgs,50);
   if(id==='lb')renderLB();
@@ -164,6 +291,23 @@ async function renderHome() {
   document.getElementById('h-streak').textContent = UC.streak || 1;
   document.getElementById('h-wpm').textContent = UC.maxWpm || 0;
   document.getElementById('h-themes').textContent = (UC.themes || []).length;
+
+  // Update Community info
+  const teamNameEl = document.getElementById('h-team-name');
+  if (teamNameEl) {
+    if (UC.teamId) {
+      const t = await dbGetTeam(UC.teamId);
+      teamNameEl.textContent = t ? t.name : 'None';
+    } else {
+      teamNameEl.textContent = 'None';
+    }
+  }
+  const unreadEl = document.getElementById('h-unread-count');
+  if (unreadEl) {
+    let unread = 0; const me = getU();
+    Object.values(dmCache).forEach(c => { unread += (c['unread_' + me] || 0); });
+    unreadEl.textContent = unread;
+  }
 
   const newsEl = document.getElementById('home-news-list');
   await loadUpdateLog();
@@ -191,11 +335,11 @@ const DEPOULE_PROMPTS=[
   "This is a long line of typing",
   "DOODLEHONEYOWNSTHESKY",
   "Im in the thick of it everybody knows, They know me where it snows I skate in and they froze.",
-  "PEterful wrote these sentences!",
+  "Sad Music (()()()()()()()",
   "If scripting is your power then what are you without it?",
   "Freed or Jeed. Hmm idk dawg.",
   "The wind whispers Pancakes in my ears",
-  "KNEEL KNEEEEL I SAID KNEEEEEEEEEEEELLLLLLLLLLLLLL KNEEEELLLLL KNEEEEEEEEEEEEEEEEEEEEEEEEEEEEL",
+  "JOE BIDEN'S SONE -;-;-;;--;;--;-",
   "Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule Depoule "
 ];
 const NORMAL_PROMPTS=[
@@ -294,7 +438,17 @@ async function soloFinished() {
   const acc=Math.max(0,Math.round(((RS.prompt.length-RS.errors)/RS.prompt.length)*100));
   const rewards = RS.raceType === 'depoule' ? REWARDS_DEPOULE : REWARDS_NORMAL;
   const baseCoins=rewards[Math.min(place-1,3)];
-  const coins=Math.round(baseCoins * (acc / 100));
+  let coins=Math.round(baseCoins * (acc / 100));
+  
+  // Apply team bonuses
+  const teamBonus = getTeamBonus(); // 10% per team member
+  const teamUpgradeBonus = getTeamCoinBoost(); // From team upgrades
+  const totalBonus = teamBonus + teamUpgradeBonus;
+  if (totalBonus > 0) {
+    const bonusCoins = Math.round(coins * (totalBonus / 100));
+    coins += bonusCoins;
+  }
+  
   if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins();}
   await checkAndGrantSecretThemes(wpm);
   await checkBadges({wpm,place,isLive:false,firstRace:!(UC.badges||[]).includes('first_race')});
@@ -515,7 +669,17 @@ async function liveFinished(opponentWon=false) {
   try { await db.collection('lobbies').doc(liveRS.lobbyId).update({[myRole+'Done']:true,[myRole+'Time']:RS.endTime}); } catch(e){}
   const place=opponentWon?2:1;
   const baseCoins=place===1?75:20;
-  const coins=Math.round(baseCoins * (acc / 100));
+  let coins=Math.round(baseCoins * (acc / 100));
+  
+  // Apply team bonuses
+  const teamBonus = getTeamBonus(); // 10% per team member
+  const teamUpgradeBonus = getTeamCoinBoost(); // From team upgrades
+  const totalBonus = teamBonus + teamUpgradeBonus;
+  if (totalBonus > 0) {
+    const bonusCoins = Math.round(coins * (totalBonus / 100));
+    coins += bonusCoins;
+  }
+  
   if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins();}
   await checkAndGrantSecretThemes(wpm);
   await checkBadges({wpm,place,isLive:true});
@@ -680,8 +844,10 @@ async function sendChat(){
   const filteredText=applyWordFilter(text);
   const replyData=chatReplyTarget?{...chatReplyTarget}:null;
   chatClearReply();
+  // Include team tag in message
+  const teamTag = UC && UC.teamTag ? UC.teamTag : null;
   // Original Firebase logic
-  await dbAddMsg({id:'m'+Date.now()+Math.random().toString(36).substr(2,4),username,text:filteredText,ts:Date.now(),edited:false,pinned:false,replyTo:replyData||null});
+  await dbAddMsg({id:'m'+Date.now()+Math.random().toString(36).substr(2,4),username,text:filteredText,ts:Date.now(),edited:false,pinned:false,replyTo:replyData||null,teamTag:teamTag});
   if(!FB_READY)scrollMsgs();
 
   // Additional Cloudflare Worker sync
@@ -702,6 +868,7 @@ function renderChat(){
   const pinnedBar=pinned.length?`<div class="chat-pinned-bar">📌 <b>${esc(pinned[pinned.length-1].username)}:</b> ${esc(pinned[pinned.length-1].text.slice(0,60))}${pinned[pinned.length-1].text.length>60?'…':''}</div>`:'';
   el.innerHTML=pinnedBar+chatCache.map(m=>{
     const isOwn=m.username===me;
+    const teamTag=m.teamTag?`<span class="team-tag">[${esc(m.teamTag)}]</span>`:'';
     const editedTag=m.edited?'<span class="edited-tag">(edited)</span>':'';
     const trolledTag=m.trolled?`<span class="trolled-tag">(trolled by ${esc(m.trolledBy||'?')})</span>`:'';
     const vtHistory=activeMods.has('ventype')&&_msgHistory[m.id]?_msgHistory[m.id].map(h=>`<div class="vt-history">${h.deleted?'🗑 [DELETED]':'✏ '+esc(h.text)} <span style="color:var(--muted);font-size:.65rem">${new Date(h.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>`).join(''):'';
@@ -716,7 +883,7 @@ function renderChat(){
     const actions=`<div class="msg-actions">${isOwn?actionsOwn:''}${actionsAll}</div>`;
     const editWrap=isOwn?`<div class="msg-edit-wrap" id="edit-wrap-${m.id}"><input class="edit-inp" id="edit-inp-${m.id}" value="${esc(m.text)}" maxlength="250" onkeydown="if(event.key==='Enter')chatSaveEdit('${esca(m.id)}');if(event.key==='Escape')chatCancelEdit('${esca(m.id)}')"><button class="edit-save" onclick="chatSaveEdit('${esca(m.id)}')">Save</button><button class="edit-cancel" onclick="chatCancelEdit('${esca(m.id)}')">Cancel</button></div>`:'';
     if(hideMsg)return'';
-    return `<div class="cmsg${m.pinned?' msg-is-pinned':''}${spyHighlight}${mentionHL}" data-id="${m.id}" id="cmsg-${m.id}">${actions}<div class="cavatar" onclick="openProfile('${esca(m.username)}')" style="cursor:pointer">${esc(m.username.charAt(0).toUpperCase())}</div><div class="cbody">${replyHTML}<div class="chdr"><span class="cuser" onclick="openProfile('${esca(m.username)}')">${esc(m.username)}</span><span class="ctime">${(activeMods.has('timestamps')&&window._modFullTs?new Date(m.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))}</span>${editedTag}${trolledTag}${pinnedTag}${richIcon}${activeMods.has('rainbowname')&&m.username===getU()?'<style>.cmsg[id="cmsg-'+m.id+'"] .cuser{animation:rainbowText 2s linear infinite}</style>':''}</div><div class="ctext" id="ctext-${m.id}">${esc(m.text)}</div>${activeMods.has('wordcount')?`<div class="mod-wordcount">${m.text.trim().split(/\s+/).length} words</div>`:''}
+    return `<div class="cmsg${m.pinned?' msg-is-pinned':''}${spyHighlight}${mentionHL}" data-id="${m.id}" id="cmsg-${m.id}">${actions}<div class="cavatar" onclick="openProfile('${esca(m.username)}')" style="cursor:pointer">${esc(m.username.charAt(0).toUpperCase())}</div><div class="cbody">${replyHTML}<div class="chdr"><span class="cuser" onclick="openProfile('${esca(m.username)}')">${esc(m.username)}</span>${teamTag}<span class="ctime">${(activeMods.has('timestamps')&&window._modFullTs?new Date(m.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))}</span>${editedTag}${trolledTag}${pinnedTag}${richIcon}${activeMods.has('rainbowname')&&m.username===getU()?'<style>.cmsg[id="cmsg-'+m.id+'"] .cuser{animation:rainbowText 2s linear infinite}</style>':''}</div><div class="ctext" id="ctext-${m.id}">${esc(m.text)}</div>${activeMods.has('wordcount')?`<div class="mod-wordcount">${m.text.trim().split(/\s+/).length} words</div>`:''}
 ${vtHistory}${editWrap}</div></div>`;
   }).join('');
   if(atBot)scrollMsgs();
@@ -771,11 +938,11 @@ async function renderLB(){
   tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:18px;color:var(--muted)">Loading…</td></tr>';
   const accs=(await dbAllUsers()).sort((a,b)=>(b.coins||0)-(a.coins||0));
   if(!accs.length){tbody.innerHTML='<tr><td colspan="4" class="empty">No players yet.</td></tr>';return;}
-  tbody.innerHTML=accs.map((a,i)=>{const bd=a.equippedBadge?ALL_BADGES.find(x=>x.id===a.equippedBadge):null;const bdHTML=bd?`<span title="${esc(bd.name)}" style="margin-left:5px;font-size:.85rem">${bd.icon}</span>`:'';return `<tr><td><span class="lbrank ${['r1','r2','r3',''][Math.min(i,3)]}">${['🥇','🥈','🥉','#'+(i+1)][Math.min(i,3)]}</span></td><td class="lbname" style="cursor:pointer" onclick="openProfile('${esca(a.username)}')">${esc(a.username)}${activeMods&&activeMods.has('richpresence')&&a.username===getU()?'<span class="rich-icon">✦</span>':''}${bdHTML}</td><td class="lbcoins">🧢 ${a.coins||0}</td><td style="color:var(--muted);font-size:.82rem">${(a.themes||[]).length} theme${(a.themes||[]).length!==1?'s':''}</td></tr>`;}).join('');
+  tbody.innerHTML=accs.map((a,i)=>{const bd=a.equippedBadge?ALL_BADGES.find(x=>x.id===a.equippedBadge):null;const bdHTML=bd?`<span title="${esc(bd.name)}" style="margin-left:5px;font-size:.85rem">${bd.icon}</span>`:'';const teamTag=a.teamTag?`<span class="team-tag">[${esc(a.teamTag)}]</span>`:'';return `<tr><td><span class="lbrank ${['r1','r2','r3',''][Math.min(i,3)]}">${['🥇','🥈','🥉','#'+(i+1)][Math.min(i,3)]}</span></td><td class="lbname" style="cursor:pointer" onclick="openProfile('${esca(a.username)}')">${esc(a.username)}${teamTag}${activeMods&&activeMods.has('richpresence')&&a.username===getU()?'<span class="rich-icon">✦</span>':''}${bdHTML}</td><td class="lbcoins">🧢 ${a.coins||0}</td><td style="color:var(--muted);font-size:.82rem">${(a.themes||[]).length} theme${(a.themes||[]).length!==1?'s':''}</td></tr>`;}).join('');
 }
 
 // ── ADMIN ────────────────────────────────────────────────
-let ADMIN_PW='randomflexeshisdihtoalice'; let admOpen=false;
+let ADMIN_PW=''; let admOpen=false;
 function openAdmin(){document.getElementById('adm-overlay').classList.add('on');document.getElementById('adm-pw').value='';document.getElementById('adm-err').textContent='';if(admOpen)renderAdm();}
 function closeAdmin(){document.getElementById('adm-overlay').classList.remove('on');}
 function tryAdmin(){const v=document.getElementById('adm-pw').value;if(v===ADMIN_PW){admOpen=true;document.getElementById('adm-lock').style.display='none';document.getElementById('adm-open').classList.add('on');renderAdm();}else document.getElementById('adm-err').textContent='Wrong password.';}
@@ -822,7 +989,7 @@ async function modDel(id,src){await dbDelMsg(id);if(src==='adm')renderAdmChat();
 async function rmMsg(id,src){await modDel(id,src);}
 
 // ── DEPOULE ──────────────────────────────────────────────
-let DP_PW='beer'; let dpOpen=false;
+let DP_PW=''; let dpOpen=false;
 function openDP(){document.getElementById('dp-overlay').classList.add('on');document.getElementById('dp-pw').value='';document.getElementById('dp-err').textContent='';if(dpOpen)renderDPChat();}
 function closeDP(){document.getElementById('dp-overlay').classList.remove('on');}
 function tryDP(){const v=document.getElementById('dp-pw').value;if(v===DP_PW){dpOpen=true;document.getElementById('dp-lock').style.display='none';document.getElementById('dp-open').classList.add('on');renderDPChat();renderDPReports();renderDPCodes();renderDPWordFilter();renderDPPublishedThemes();}else document.getElementById('dp-err').textContent='Wrong password.';}
@@ -1180,6 +1347,7 @@ document.getElementById('settings-overlay').addEventListener('click',function(e)
 document.getElementById('ulog-overlay').addEventListener('click',function(e){if(e.target===this)closeUpdateLog()});
 document.getElementById('mgr-overlay').addEventListener('click',function(e){if(e.target===this)closeManager()});
 document.getElementById('dp-overlay').addEventListener('click',function(e){if(e.target===this)closeDP()});
+document.getElementById('hub-overlay').addEventListener('click',function(e){if(e.target===this)closeHub()});
 
 // cleanup on page leave
 window.addEventListener('beforeunload',()=>{if(liveRS.lobbyId&&liveRS.role==='host'&&liveRS.searching){try{db.collection('lobbies').doc(liveRS.lobbyId).delete();}catch(e){}}});
@@ -1326,6 +1494,16 @@ function updateDMNotif(){
   const hasUnread=Object.values(dmCache).some(c=>(c['unread_'+me]||0)>0);
   const dot=document.getElementById('dm-notif');
   if(dot)dot.classList.toggle('on',hasUnread);
+
+  // Keep Home screen count synced
+  const homeTab = document.getElementById('tab-home');
+  if (homeTab && homeTab.classList.contains('on')) {
+    const unreadEl = document.getElementById('h-unread-count');
+    if (unreadEl) {
+      let unread = 0; Object.values(dmCache).forEach(c => { unread += (c['unread_' + me] || 0); });
+      unreadEl.textContent = unread;
+    }
+  }
 }
 
 function renderDMList(){
@@ -1418,6 +1596,10 @@ function dmClearReply(){
   if(bar)bar.style.display='none';
 }
 
+// ── HUB ────────────────────────────────────────────────────
+function openHub(){ document.getElementById('hub-overlay').classList.add('on'); }
+function closeHub(){ document.getElementById('hub-overlay').classList.remove('on'); }
+
 function renderDMConvo(id){
   const el=document.getElementById('dm-msgs');
   if(!el)return;
@@ -1476,7 +1658,7 @@ async function sendDM(){
 
 
 
-let MGR_PW='petershows';
+let MGR_PW='';
 let mgrOpen=false, updateLogCache=[];
 
 function openUpdateLog(){
@@ -2400,7 +2582,7 @@ function showTrollNotif(notif){
 
 
 // ── MODS SYSTEM ───────────────────────────────────────────────
-let MOD_PW='finnflexeshisdihtoalice';
+let MOD_PW='';
 let modsOpen=false, activeMods=new Set();
 
 const ALL_MODS=[
@@ -2772,12 +2954,36 @@ function applyDPTheme(id) {
 
 
 // ── APS PANEL ─────────────────────────────────────────────────
-let APS_PW = 'depouleflexeshisdihtoalice';
+let APS_PW = '';
 let apsOpen = false;
+
+// ═══════════════════════════════════════════════════════════════
+// PANEL PASSWORDS - SECURITY NOTICE
+// ═══════════════════════════════════════════════════════════════
+// Panel passwords are NOT stored in this code for security.
+// They are loaded from Firebase: settings/passwords document
+// 
+// To set passwords, use the APS Panel → Passwords section
+// Default initial passwords (set these in Firebase first time):
+//   admin: 'randomflexeshisdihtoalice'
+//   dp: 'beer'
+//   mgr: 'petershows'
+//   mods: 'finnflexeshisdihtoalice'
+//   aps: 'depouleflexeshisdihtoalice'
+// ═══════════════════════════════════════════════════════════════
 
 // Load live passwords from Firebase
 async function loadPanelPasswords() {
-  if (!FB_READY) return;
+  if (!FB_READY) {
+    // Fallback for local storage mode - use default passwords
+    ADMIN_PW = 'randomflexeshisdihtoalice';
+    DP_PW = 'beer';
+    MGR_PW = 'petershows';
+    MOD_PW = 'finnflexeshisdihtoalice';
+    APS_PW = 'depouleflexeshisdihtoalice';
+    return;
+  }
+  
   try {
     const doc = await db.collection('settings').doc('passwords').get();
     if (doc.exists) {
@@ -2787,8 +2993,32 @@ async function loadPanelPasswords() {
       if (d.mgr)   MGR_PW   = d.mgr;
       if (d.mods)  MOD_PW   = d.mods;
       if (d.aps)   APS_PW   = d.aps;
+    } else {
+      // No passwords in Firebase yet - set defaults and save them
+      ADMIN_PW = 'randomflexeshisdihtoalice';
+      DP_PW = 'beer';
+      MGR_PW = 'petershows';
+      MOD_PW = 'finnflexeshisdihtoalice';
+      APS_PW = 'depouleflexeshisdihtoalice';
+      
+      // Save defaults to Firebase
+      await db.collection('settings').doc('passwords').set({
+        admin: ADMIN_PW,
+        dp: DP_PW,
+        mgr: MGR_PW,
+        mods: MOD_PW,
+        aps: APS_PW
+      });
     }
-  } catch(e) { console.warn('Could not load panel passwords:', e); }
+  } catch(e) { 
+    console.warn('Could not load panel passwords:', e);
+    // Use defaults if there's an error
+    ADMIN_PW = 'randomflexeshisdihtoalice';
+    DP_PW = 'beer';
+    MGR_PW = 'petershows';
+    MOD_PW = 'finnflexeshisdihtoalice';
+    APS_PW = 'depouleflexeshisdihtoalice';
+  }
 }
 
 function openAPS() {
@@ -3219,6 +3449,655 @@ function startFromWelcome(mode) {
   document.getElementById('welcome-screen').style.display = 'none';
   document.getElementById('auth').style.display = 'flex';
   switchAuth(mode);
+}
+
+// ── TEAMS UI AND FUNCTIONALITY ────────────────────────
+async function renderTeamsTab() {
+  if (!UC) return;
+  
+  // Load team data if user is in a team
+  if (UC.teamId) {
+    teamCache = await dbGetTeam(UC.teamId);
+    if (teamCache) {
+      document.getElementById('teams-no-team').style.display = 'none';
+      document.getElementById('teams-content').style.display = 'block';
+      renderTeamInfo();
+      startTeamChatListener(UC.teamId);
+      switchTeamTab('chat');
+    } else {
+      // Team no longer exists
+      await dbUpdateUser(getU(), { teamId: null, teamRank: null });
+      UC.teamId = null;
+      UC.teamRank = null;
+      document.getElementById('teams-no-team').style.display = 'block';
+      document.getElementById('teams-content').style.display = 'none';
+    }
+  } else {
+    document.getElementById('teams-no-team').style.display = 'block';
+    document.getElementById('teams-content').style.display = 'none';
+  }
+}
+
+function renderTeamInfo() {
+  if (!teamCache) return;
+  
+  document.getElementById('team-name').textContent = teamCache.name || '—';
+  document.getElementById('team-tag').textContent = `[${teamCache.tag || '—'}]`;
+  document.getElementById('team-members-count').textContent = (teamCache.members || []).length;
+  document.getElementById('team-treasury').textContent = teamCache.treasury || 0;
+  
+  const teamBonus = getTeamBonus();
+  const upgradeBonus = getTeamCoinBoost();
+  const totalBonus = teamBonus + upgradeBonus;
+  document.getElementById('team-bonus-pct').textContent = `+${totalBonus}%`;
+  
+  const bonusInfoEl = document.getElementById('team-bonus-info');
+  bonusInfoEl.innerHTML = `
+    <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px">Team Bonus</div>
+    <div style="font-size:1.3rem;color:var(--ok);font-weight:700">+${totalBonus}%</div>
+    <div style="font-size:.7rem;color:var(--muted);margin-top:2px">
+      ${teamBonus}% from ${(teamCache.members || []).length} members
+      ${upgradeBonus > 0 ? ` + ${upgradeBonus}% from upgrades` : ''}
+    </div>
+  `;
+  
+  // Show manage button if user is team leader
+  const userMember = (teamCache.members || []).find(m => m.username === getU());
+  if (userMember && userMember.rank === 'president') {
+    document.getElementById('team-manage-btn').style.display = 'block';
+  } else {
+    document.getElementById('team-manage-btn').style.display = 'none';
+  }
+}
+
+function switchTeamTab(tab) {
+  document.querySelectorAll('.team-tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.team-tab-content').forEach(c => c.style.display = 'none');
+  
+  document.querySelectorAll('.team-tab').forEach(t => {
+    if (t.textContent.includes(tab === 'chat' ? '💬' : tab === 'members' ? '👥' : '⬆')) {
+      t.classList.add('on');
+    }
+  });
+  
+  document.getElementById(`team-tab-${tab}`).style.display = 'block';
+  
+  if (tab === 'members') renderTeamMembers();
+  if (tab === 'upgrades') renderTeamUpgrades();
+}
+
+function renderTeamChat() {
+  const msgs = document.getElementById('team-msgs');
+  if (!msgs) return;
+  
+  if (!teamChatCache.length) {
+    msgs.innerHTML = '<div class="empty" style="text-align:center;padding:24px;font-size:.88rem;color:var(--muted)">No messages yet. Say hello to your team! 👋</div>';
+    return;
+  }
+  
+  msgs.innerHTML = teamChatCache.map(m => `
+    <div class="team-msg">
+      <span class="team-msg-user" onclick="openProfile('${esca(m.user)}')" style="cursor:pointer">${esc(m.user)}:</span>
+      <span class="team-msg-text">${esc(m.text)}</span>
+      <span class="team-msg-time">${new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+    </div>
+  `).join('');
+  
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendTeamChat() {
+  if (!teamCache || !UC) return;
+  if (UC.muted) { showToast('🔇 You are muted and cannot chat.'); return; }
+  
+  const input = document.getElementById('team-chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  // Clear input immediately so double-send is impossible
+  input.value = '';
+  
+  const msg = {
+    id: 'tm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+    teamId: teamCache.id,
+    user: UC.username,
+    text: applyWordFilter(text),
+    ts: Date.now()
+  };
+  
+  await dbAddTeamMsg(msg);
+}
+
+async function renderTeamMembers() {
+  if (!teamCache) return;
+  
+  const list = document.getElementById('team-members-list');
+  const members = teamCache.members || [];
+  
+  list.innerHTML = `
+    <div style="margin-bottom:15px;font-size:.85rem;color:var(--muted)">
+      ${members.length} / ${teamCache.maxMembers || 10} members
+    </div>
+    ${members.map(m => {
+      const rank = DEFAULT_RANKS.find(r => r.id === m.rank) || DEFAULT_RANKS[DEFAULT_RANKS.length - 1];
+      return `
+        <div class="team-member-row">
+          <div class="team-member-info">
+            <div class="team-member-name" onclick="openProfile('${esca(m.username)}')" style="cursor:pointer">${esc(m.username)}</div>
+            <div class="team-member-rank" style="color:${rank.id === 'president' ? '#ffd700' : rank.id === 'vice' ? '#c0c0c0' : '#cd7f32'}">${rank.name}</div>
+          </div>
+          <div class="team-member-stats">
+            <span style="color:var(--muted);font-size:.8rem">Joined ${new Date(m.joinedAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+function renderTeamUpgrades() {
+  if (!teamCache) return;
+  
+  const list = document.getElementById('team-upgrades-list');
+  const upgrades = teamCache.upgrades || [];
+  const treasury = teamCache.treasury || 0;
+  
+  // Check if user has permission to buy upgrades
+  const userMember = (teamCache.members || []).find(m => m.username === getU());
+  const userRank = userMember ? userMember.rank : 'member';
+  const rankData = DEFAULT_RANKS.find(r => r.id === userRank);
+  const canPurchase = rankData && rankData.permissions.buyUpgrades;
+  
+  list.innerHTML = `
+    <div style="margin-bottom:15px;padding:10px;background:rgba(255,170,0,.05);border:1px solid rgba(255,170,0,.1);border-radius:6px;font-size:.85rem">
+      Team Treasury: <span style="color:var(--ok);font-weight:700">${treasury} 🧢</span>
+    </div>
+    ${!canPurchase ? '<div style="padding:10px;background:rgba(255,100,0,.05);border:1px solid rgba(255,100,0,.15);border-radius:6px;font-size:.85rem;color:var(--muted);margin-bottom:15px">⚠ You need buy upgrade permissions to purchase team upgrades. Contact your team leader.</div>' : ''}
+    ${TEAM_UPGRADES.map(u => {
+      const owned = upgrades.includes(u.id);
+      const hasPrereq = !u.requires || upgrades.includes(u.requires);
+      const canAfford = treasury >= u.cost;
+      const canBuy = !owned && hasPrereq && canAfford && canPurchase;
+      
+      return `
+        <div class="team-upgrade-card ${owned ? 'owned' : ''}">
+          <div class="team-upgrade-header">
+            <div class="team-upgrade-name">${u.name}</div>
+            <div class="team-upgrade-cost">${owned ? '✓ Owned' : u.cost + ' 🧢'}</div>
+          </div>
+          <div class="team-upgrade-desc">${u.desc}</div>
+          ${owned ? '<div class="team-upgrade-status">Active</div>' : 
+            !hasPrereq ? '<div class="team-upgrade-locked">Requires ' + TEAM_UPGRADES.find(x=>x.id===u.requires).name + '</div>' :
+            !canPurchase ? '<div class="team-upgrade-locked">No permission to buy</div>' :
+            !canAfford ? '<div class="team-upgrade-locked">Not enough treasury</div>' :
+            `<button class="rbtn" style="padding:8px 20px;margin-top:10px" onclick="buyTeamUpgradeFromTab('${u.id}')">💰 Buy Now</button>`}
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+// Modal functions
+function openTeamCreate() {
+  document.getElementById('team-create-overlay').style.display = 'flex';
+  document.getElementById('team-create-name').value = '';
+  document.getElementById('team-create-tag').value = '';
+  document.getElementById('team-create-msg').textContent = '';
+}
+
+function closeTeamCreate() {
+  document.getElementById('team-create-overlay').style.display = 'none';
+}
+
+async function createTeam() {
+  if (!UC) return;
+  
+  const name = document.getElementById('team-create-name').value.trim();
+  const tag = document.getElementById('team-create-tag').value.trim().toUpperCase();
+  const msg = document.getElementById('team-create-msg');
+  
+  if (!name || !tag) {
+    msg.className = 'amsg err';
+    msg.textContent = 'Please fill in all fields.';
+    return;
+  }
+  
+  if (tag.length < 3 || tag.length > 5) {
+    msg.className = 'amsg err';
+    msg.textContent = 'Tag must be 3-5 characters.';
+    return;
+  }
+  
+  if (UC.coins < 500) {
+    msg.className = 'amsg err';
+    msg.textContent = 'You need 500 🧢 to create a team.';
+    return;
+  }
+  
+  // Check if tag is already taken
+  const allTeams = await dbAllTeams();
+  if (allTeams.find(t => t.tag === tag)) {
+    msg.className = 'amsg err';
+    msg.textContent = 'Tag already taken.';
+    return;
+  }
+  
+  // Create team
+  const teamId = 'team_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  const team = {
+    id: teamId,
+    name: name,
+    tag: tag,
+    leader: UC.username,
+    members: [{ username: UC.username, rank: 'president', joinedAt: Date.now() }],
+    treasury: 0,
+    upgrades: [],
+    ranks: DEFAULT_RANKS,
+    maxMembers: 10,
+    createdAt: Date.now()
+  };
+  
+  await dbCreateTeam(team);
+  
+  // Deduct coins and assign team to user
+  UC.coins -= 500;
+  UC.teamId = teamId;
+  UC.teamRank = 'president';
+  UC.teamTag = tag;
+  await dbUpdateUser(getU(), { coins: UC.coins, teamId: teamId, teamRank: 'president', teamTag: tag });
+  refreshCoins();
+  
+  closeTeamCreate();
+  renderTeamsTab();
+}
+
+async function openTeamBrowser() {
+  document.getElementById('team-browser-overlay').style.display = 'flex';
+  
+  const list = document.getElementById('team-browser-list');
+  const allTeams = await dbAllTeams();
+  
+  if (allTeams.length === 0) {
+    list.innerHTML = '<div class="empty">No teams yet. Be the first to create one!</div>';
+    return;
+  }
+  
+  list.innerHTML = allTeams.map(t => `
+    <div class="team-browser-card">
+      <div class="team-browser-header">
+        <div>
+          <div class="team-browser-name">${esc(t.name)}</div>
+          <div class="team-browser-tag">[${esc(t.tag)}]</div>
+        </div>
+        <button class="rbtn" onclick="joinTeam('${esca(t.id)}')" style="padding:6px 20px">Join</button>
+      </div>
+      <div class="team-browser-stats">
+        <span>👥 ${(t.members || []).length}/${t.maxMembers || 10} members</span>
+        <span>🧢 ${t.treasury || 0} treasury</span>
+      </div>
+      <div class="team-browser-leader">Leader: ${esc(t.leader)}</div>
+    </div>
+  `).join('');
+}
+
+function closeTeamBrowser() {
+  document.getElementById('team-browser-overlay').style.display = 'none';
+}
+
+async function joinTeam(teamId) {
+  if (!UC) return;
+  
+  const team = await dbGetTeam(teamId);
+  if (!team) {
+    alert('Team not found.');
+    return;
+  }
+  
+  if ((team.members || []).length >= (team.maxMembers || 10)) {
+    alert('Team is full.');
+    return;
+  }
+  
+  if ((team.members || []).find(m => m.username === UC.username)) {
+    alert('You are already in this team.');
+    return;
+  }
+  
+  // Add user to team
+  const members = team.members || [];
+  members.push({ username: UC.username, rank: 'member', joinedAt: Date.now() });
+  await dbUpdateTeam(teamId, { members: members });
+  
+  // Update user
+  UC.teamId = teamId;
+  UC.teamRank = 'member';
+  UC.teamTag = team.tag;
+  await dbUpdateUser(getU(), { teamId: teamId, teamRank: 'member', teamTag: team.tag });
+  
+  closeTeamBrowser();
+  renderTeamsTab();
+}
+
+async function leaveTeam() {
+  if (!UC || !UC.teamId) return;
+  
+  if (!confirm('Are you sure you want to leave your team?')) return;
+  
+  const team = await dbGetTeam(UC.teamId);
+  if (!team) return;
+  
+  // If user is leader, disband team
+  if (UC.teamRank === 'president') {
+    if (!confirm('As team leader, leaving will disband the entire team. Continue?')) return;
+    await disbandTeam();
+    return;
+  }
+  
+  // Remove user from team
+  const members = (team.members || []).filter(m => m.username !== UC.username);
+  await dbUpdateTeam(UC.teamId, { members: members });
+  
+  // Update user
+  UC.teamId = null;
+  UC.teamRank = null;
+  UC.teamTag = null;
+  await dbUpdateUser(getU(), { teamId: null, teamRank: null, teamTag: null });
+  
+  if (teamChatUnsub) try{teamChatUnsub();}catch(e){clearInterval(teamChatUnsub);}
+  teamChatUnsub = null;
+  teamCache = null;
+  
+  renderTeamsTab();
+}
+
+function openTeamDonate() {
+  if (!UC) return;
+  document.getElementById('team-donate-overlay').style.display = 'flex';
+  document.getElementById('team-donate-amt').value = '';
+  document.getElementById('team-donate-balance').textContent = (UC.coins || 0) + ' 🧢';
+  document.getElementById('team-donate-msg').textContent = '';
+}
+
+function closeTeamDonate() {
+  document.getElementById('team-donate-overlay').style.display = 'none';
+}
+
+async function donateToTeam() {
+  if (!UC || !teamCache) return;
+  
+  const amt = parseInt(document.getElementById('team-donate-amt').value);
+  const msg = document.getElementById('team-donate-msg');
+  
+  if (!amt || amt < 1) {
+    msg.className = 'amsg err';
+    msg.textContent = 'Enter a valid amount.';
+    return;
+  }
+  
+  if (UC.coins < amt) {
+    msg.className = 'amsg err';
+    msg.textContent = 'Insufficient bottlecaps.';
+    return;
+  }
+  
+  // Transfer coins
+  UC.coins -= amt;
+  teamCache.treasury = (teamCache.treasury || 0) + amt;
+  
+  await dbUpdateUser(getU(), { coins: UC.coins });
+  await dbUpdateTeam(teamCache.id, { treasury: teamCache.treasury });
+  
+  refreshCoins();
+  renderTeamInfo();
+  
+  msg.className = 'amsg ok';
+  msg.textContent = `Donated ${amt} 🧢 to team treasury!`;
+  
+  setTimeout(closeTeamDonate, 1500);
+}
+
+function openTeamManage() {
+  if (!UC || !teamCache) return;
+  document.getElementById('team-manage-overlay').style.display = 'flex';
+  switchTeamManageTab('ranks');
+}
+
+function closeTeamManage() {
+  document.getElementById('team-manage-overlay').style.display = 'none';
+}
+
+function switchTeamManageTab(tab) {
+  document.querySelectorAll('.team-manage-tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.team-manage-section').forEach(s => s.style.display = 'none');
+  
+  document.querySelectorAll('.team-manage-tab').forEach(t => {
+    if ((tab === 'ranks' && t.textContent.includes('📊')) ||
+        (tab === 'permissions' && t.textContent.includes('🔒')) ||
+        (tab === 'upgrades' && t.textContent.includes('⬆')) ||
+        (tab === 'settings' && t.textContent.includes('⚙'))) {
+      t.classList.add('on');
+    }
+  });
+  
+  document.getElementById(`team-manage-${tab}`).style.display = 'block';
+  
+  if (tab === 'ranks') renderTeamManageMembers();
+  if (tab === 'permissions') renderTeamManagePermissions();
+  if (tab === 'upgrades') renderTeamManageBuyUpgrades();
+  if (tab === 'settings') renderTeamManageSettings();
+}
+
+function renderTeamManageMembers() {
+  if (!teamCache) return;
+  
+  const list = document.getElementById('team-manage-members-list');
+  const members = teamCache.members || [];
+  
+  list.innerHTML = members.map(m => {
+    if (m.rank === 'president') {
+      return `
+        <div class="team-manage-member-row">
+          <div class="team-manage-member-name">${esc(m.username)} (You)</div>
+          <div class="team-manage-member-rank" style="color:#ffd700">President</div>
+        </div>
+      `;
+    }
+    
+    return `
+      <div class="team-manage-member-row">
+        <div class="team-manage-member-name">${esc(m.username)}</div>
+        <select class="team-manage-rank-select" onchange="changeTeamMemberRank('${esca(m.username)}', this.value)">
+          ${DEFAULT_RANKS.filter(r => r.id !== 'president').map(r => `
+            <option value="${r.id}" ${m.rank === r.id ? 'selected' : ''}>${r.name}</option>
+          `).join('')}
+        </select>
+        <button class="team-manage-kick-btn" onclick="kickTeamMember('${esca(m.username)}')">Kick</button>
+      </div>
+    `;
+  }).join('');
+}
+
+async function changeTeamMemberRank(username, newRank) {
+  if (!teamCache) return;
+  
+  const members = teamCache.members || [];
+  const member = members.find(m => m.username === username);
+  if (!member) return;
+  
+  member.rank = newRank;
+  await dbUpdateTeam(teamCache.id, { members: members });
+  await dbUpdateUser(username, { teamRank: newRank });
+  
+  renderTeamManageMembers();
+}
+
+async function kickTeamMember(username) {
+  if (!teamCache) return;
+  if (!confirm(`Kick ${username} from the team?`)) return;
+  
+  const members = (teamCache.members || []).filter(m => m.username !== username);
+  await dbUpdateTeam(teamCache.id, { members: members });
+  await dbUpdateUser(username, { teamId: null, teamRank: null });
+  
+  renderTeamManageMembers();
+  renderTeamInfo();
+}
+
+function renderTeamManagePermissions() {
+  if (!teamCache) return;
+  
+  const list = document.getElementById('team-manage-permissions-list');
+  const ranks = teamCache.ranks || DEFAULT_RANKS;
+  
+  list.innerHTML = ranks.filter(r => r.id !== 'president').map(r => `
+    <div class="team-manage-perm-section">
+      <div class="team-manage-perm-rank">${r.name}</div>
+      <div class="team-manage-perm-list">
+        <label><input type="checkbox" id="perm-${r.id}-manageMembers" ${r.permissions.manageMembers ? 'checked' : ''}> Manage Members</label>
+        <label><input type="checkbox" id="perm-${r.id}-manageTreasury" ${r.permissions.manageTreasury ? 'checked' : ''}> Manage Treasury</label>
+        <label><input type="checkbox" id="perm-${r.id}-buyUpgrades" ${r.permissions.buyUpgrades ? 'checked' : ''}> Buy Upgrades</label>
+        <label><input type="checkbox" id="perm-${r.id}-editSettings" ${r.permissions.editSettings ? 'checked' : ''}> Edit Settings</label>
+        <label><input type="checkbox" id="perm-${r.id}-deleteMessages" ${r.permissions.deleteMessages ? 'checked' : ''}> Delete Messages</label>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function saveTeamPermissions() {
+  if (!teamCache) return;
+  
+  const ranks = teamCache.ranks || DEFAULT_RANKS;
+  
+  ranks.forEach(r => {
+    if (r.id === 'president') return;
+    r.permissions.manageMembers = document.getElementById(`perm-${r.id}-manageMembers`).checked;
+    r.permissions.manageTreasury = document.getElementById(`perm-${r.id}-manageTreasury`).checked;
+    r.permissions.buyUpgrades = document.getElementById(`perm-${r.id}-buyUpgrades`).checked;
+    r.permissions.editSettings = document.getElementById(`perm-${r.id}-editSettings`).checked;
+    r.permissions.deleteMessages = document.getElementById(`perm-${r.id}-deleteMessages`).checked;
+  });
+  
+  await dbUpdateTeam(teamCache.id, { ranks: ranks });
+  alert('Permissions saved!');
+}
+
+function renderTeamManageBuyUpgrades() {
+  if (!teamCache) return;
+  
+  const list = document.getElementById('team-manage-upgrades-list');
+  const upgrades = teamCache.upgrades || [];
+  const treasury = teamCache.treasury || 0;
+  
+  document.getElementById('team-manage-treasury').textContent = treasury + ' 🧢';
+  
+  list.innerHTML = TEAM_UPGRADES.map(u => {
+    const owned = upgrades.includes(u.id);
+    const canBuy = !owned && (!u.requires || upgrades.includes(u.requires)) && treasury >= u.cost;
+    
+    return `
+      <div class="team-upgrade-card ${owned ? 'owned' : ''}">
+        <div class="team-upgrade-header">
+          <div class="team-upgrade-name">${u.name}</div>
+          <div class="team-upgrade-cost">${owned ? '✓ Owned' : u.cost + ' 🧢'}</div>
+        </div>
+        <div class="team-upgrade-desc">${u.desc}</div>
+        ${owned ? '<div class="team-upgrade-status">Active</div>' : 
+          !canBuy && u.requires && !upgrades.includes(u.requires) ? '<div class="team-upgrade-locked">Requires ' + TEAM_UPGRADES.find(x=>x.id===u.requires).name + '</div>' :
+          !canBuy ? '<div class="team-upgrade-locked">Not enough treasury</div>' :
+          `<button class="rbtn" style="padding:6px 20px;margin-top:8px" onclick="buyTeamUpgrade('${u.id}')">Buy Now</button>`}
+      </div>
+    `;
+  }).join('');
+}
+
+async function buyTeamUpgrade(upgradeId) {
+  if (!teamCache) return;
+  
+  const upgrade = TEAM_UPGRADES.find(u => u.id === upgradeId);
+  if (!upgrade) return;
+  
+  const upgrades = teamCache.upgrades || [];
+  if (upgrades.includes(upgradeId)) {
+    alert('Already owned!');
+    return;
+  }
+  
+  if (upgrade.requires && !upgrades.includes(upgrade.requires)) {
+    alert('You need to buy ' + TEAM_UPGRADES.find(u => u.id === upgrade.requires).name + ' first!');
+    return;
+  }
+  
+  if ((teamCache.treasury || 0) < upgrade.cost) {
+    alert('Not enough treasury!');
+    return;
+  }
+  
+  // Buy upgrade
+  upgrades.push(upgradeId);
+  teamCache.treasury -= upgrade.cost;
+  
+  // Apply upgrade effects
+  if (upgrade.effect.type === 'maxMembers') {
+    teamCache.maxMembers = upgrade.effect.value;
+  }
+  
+  await dbUpdateTeam(teamCache.id, { 
+    upgrades: upgrades, 
+    treasury: teamCache.treasury,
+    maxMembers: teamCache.maxMembers || 10
+  });
+  
+  renderTeamManageBuyUpgrades();
+  renderTeamInfo();
+}
+
+async function buyTeamUpgradeFromTab(upgradeId) {
+  // This is called from the regular Upgrades tab (not the manage panel)
+  await buyTeamUpgrade(upgradeId);
+  renderTeamUpgrades(); // Refresh the upgrades tab
+  renderTeamInfo(); // Refresh team info sidebar
+}
+
+function renderTeamManageSettings() {
+  // Load available themes into selector
+  const select = document.getElementById('team-theme-select');
+  // This would load available themes - for now just default
+}
+
+async function saveTeamSettings() {
+  if (!teamCache) return;
+  
+  const theme = document.getElementById('team-theme-select').value;
+  await dbUpdateTeam(teamCache.id, { theme: theme || null });
+  
+  alert('Settings saved!');
+}
+
+async function disbandTeam() {
+  if (!teamCache) return;
+  
+  if (!confirm('Are you ABSOLUTELY SURE you want to disband the team? This cannot be undone!')) return;
+  
+  // Remove team from all members
+  const members = teamCache.members || [];
+  for (const m of members) {
+    await dbUpdateUser(m.username, { teamId: null, teamRank: null, teamTag: null });
+  }
+  
+  // Delete team
+  await dbDeleteTeam(teamCache.id);
+  
+  // Update current user
+  UC.teamId = null;
+  UC.teamRank = null;
+  UC.teamTag = null;
+  
+  if (teamChatUnsub) try{teamChatUnsub();}catch(e){clearInterval(teamChatUnsub);}
+  teamChatUnsub = null;
+  teamCache = null;
+  
+  closeTeamManage();
+  renderTeamsTab();
 }
 
 async function init() {

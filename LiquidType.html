@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>LiquidType v2.33</title>
+<title>LiquidType v2.36</title>
 <link rel="stylesheet" href="style.css">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -140,6 +140,7 @@
     <div class="nav-tabs">
       <button class="ntab on" onclick="goTab('home')">🏠 Home</button>
       <button class="ntab" onclick="goTab('race')">🏁 Race</button>
+      <button class="ntab" onclick="goTab('teams')">👥 Teams</button>
       <button class="ntab" onclick="goTab('shop')">🛒 Shop</button>
       <button class="ntab" onclick="goTab('chat')">💬 Chat</button>
       <button class="ntab" onclick="goTab('lb')">🏆 Leaderboard</button>
@@ -149,16 +150,8 @@
       <div class="coins">🧢 <span id="coin-count">0</span></div>
       <div class="ubadge" id="nav-user" onclick="openProfile(getU())" style="cursor:pointer;border-color:#553300;color:#ffaa44" title="View your profile">—</div>
       <a href="https://discord.gg/tKCDpUHsFM" target="_blank" class="nbtn dis">Discord</a>
-      <a href="/gamble/index.html" class="nbtn" style="background:#1a0d00;border-color:#664400;color:#cc7700;text-decoration:none">🎰 Casino</a>
-      <button class="nbtn" style="background:#001a1a;border-color:#006655;color:#00ddaa" onclick="openUpdateLog()">📋 Update Log</button>
-      <button class="nbtn" style="background:#0a0018;border-color:#4400aa;color:#aa77ff" onclick="openManager()">🛠 Manager</button>
-      <button class="nbtn" style="background:#1a0a00;border-color:#8b4513;color:#ffaa44;font-weight:700" onclick="openDPGame()">🐾 DePoule</button>
-      <button class="nbtn dep" onclick="openDP()">DePoule</button>
-      <button class="nbtn adm" onclick="openAdmin()">⚙ Admin</button>
-      <button class="nbtn" style="background:#1a1000;border-color:#665500;color:#ffcc44" onclick="openBadges()">🏅 Badges</button>
+      <a href="/gamble/index.html" class="nbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; text-decoration:none">🎰 Casino</a>
       <button class="nbtn" style="background:#001a2e;border-color:#003366;color:#4499ff" onclick="openSettings()">⚙ Settings</button>
-      <button class="nbtn" style="background:#0a1a00;border-color:#336600;color:#88ff44;font-weight:700;letter-spacing:1px" onclick="openMods()">➕ MODS</button>
-      <button class="nbtn" style="background:#00001a;border-color:#0000aa;color:#4466ff;font-weight:700;letter-spacing:1px" onclick="openAPS()">🛡 APS</button>
       <button class="nbtn out" onclick="doLogout()">Logout</button>
     </div>
   </nav>
@@ -196,6 +189,24 @@
         <div class="h-action-buttons">
           <button class="rbtn" onclick="goTab('race')">🏁 Enter Race</button>
           <button class="rbtn" style="background:#1a0a00;border-color:#8b4513;color:#ffaa44" onclick="openDPGame()">🐾 Pet DePoule</button>
+          <a href="/gamble/index.html" class="rbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; text-decoration:none; display:flex; align-items:center; justify-content:center;">🎰 Casino</a>
+          <button class="rbtn" style="background:#330000;border-color:#660000;color:#ff4444" onclick="openHub()">🛠 System Hub</button>
+        </div>
+      </div>
+
+      <div class="card-panel home-card community">
+        <div class="h-card-title">Community Hub</div>
+        <div class="h-social-info">
+          <div class="h-stat-row" style="margin-bottom:15px">
+            <div class="h-stat"><span class="h-val blue" id="h-team-name">None</span><span class="h-lbl">Team</span></div>
+            <div class="h-stat"><span class="h-val gold" id="h-unread-count">0</span><span class="h-lbl">Unread DMs</span></div>
+          </div>
+          <div class="h-action-buttons">
+            <button class="h-btn-small" onclick="goTab('teams')">Teams Dashboard</button>
+            <button class="h-btn-small" onclick="goTab('dm')">Direct Messages</button>
+            <button class="h-btn-small" onclick="goTab('chat')">Global Chat</button>
+            <a href="https://discord.gg/tKCDpUHsFM" target="_blank" class="h-btn-small" style="text-decoration:none; text-align:center">Join Discord</a>
+          </div>
         </div>
       </div>
     </div>
@@ -243,6 +254,84 @@
         <div class="rst"><div class="rstv" id="r-time">—</div><div class="rstl">Time</div></div>
       </div>
       <button class="rbtn" onclick="resetRace()">Race Again</button>
+    </div>
+  </div>
+
+  <!-- TEAMS -->
+  <div id="tab-teams" class="tab">
+    <div class="teams-hdr">
+      <div class="teams-ttl">👥 Teams</div>
+      <div class="teams-sub">Join forces, earn more, compete together</div>
+    </div>
+    
+    <div id="teams-no-team" style="display:none">
+      <div class="card-panel" style="max-width:700px;margin:0 auto">
+        <div style="text-align:center;padding:40px 20px">
+          <div style="font-size:3rem;margin-bottom:15px">👥</div>
+          <div style="font-family:'Bebas Neue',cursive;font-size:2rem;color:var(--accent2);margin-bottom:10px">You're Not in a Team</div>
+          <div style="color:var(--muted);margin-bottom:30px;line-height:1.6">Join a team to earn bonus bottlecaps, chat with teammates, and unlock team upgrades!</div>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <button class="rbtn" onclick="openTeamCreate()">➕ Create Team</button>
+            <button class="rbtn" style="background:#001a1a;border-color:#006655" onclick="openTeamBrowser()">🔍 Browse Teams</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="teams-content" style="display:none">
+      <div class="teams-layout">
+        <!-- Team Sidebar -->
+        <div class="team-sidebar">
+          <div class="team-info-card">
+            <div class="team-name" id="team-name">—</div>
+            <div class="team-tag" id="team-tag">—</div>
+            <div class="team-stats">
+              <div class="team-stat"><span class="team-stat-val" id="team-members-count">0</span><span class="team-stat-lbl">Members</span></div>
+              <div class="team-stat"><span class="team-stat-val gold" id="team-treasury">0</span><span class="team-stat-lbl">🧢 Treasury</span></div>
+            </div>
+            <div class="team-bonus-info" id="team-bonus-info">
+              <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px">Team Bonus</div>
+              <div style="font-size:1.3rem;color:var(--ok);font-weight:700" id="team-bonus-pct">+0%</div>
+            </div>
+          </div>
+          
+          <div class="team-actions">
+            <button class="team-action-btn donate" onclick="openTeamDonate()">💰 Donate</button>
+            <button class="team-action-btn" id="team-manage-btn" onclick="openTeamManage()" style="display:none">⚙ Manage</button>
+            <button class="team-action-btn leave" onclick="leaveTeam()">🚪 Leave Team</button>
+          </div>
+        </div>
+
+        <!-- Team Main Content -->
+        <div class="team-main">
+          <div class="team-tabs">
+            <button class="team-tab on" onclick="switchTeamTab('chat')">💬 Chat</button>
+            <button class="team-tab" onclick="switchTeamTab('members')">👥 Members</button>
+            <button class="team-tab" onclick="switchTeamTab('upgrades')">⬆ Upgrades</button>
+          </div>
+
+          <!-- Chat Tab -->
+          <div class="team-tab-content" id="team-tab-chat">
+            <div class="team-chatbox">
+              <div class="team-msgs" id="team-msgs"></div>
+              <div class="team-chat-input-wrap">
+                <input class="team-chat-input" id="team-chat-input" placeholder="Message your team..." maxlength="300" onkeydown="if(event.key==='Enter')sendTeamChat()">
+                <button class="team-chat-send" onclick="sendTeamChat()">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Members Tab -->
+          <div class="team-tab-content" id="team-tab-members" style="display:none">
+            <div id="team-members-list"></div>
+          </div>
+
+          <!-- Upgrades Tab -->
+          <div class="team-tab-content" id="team-tab-upgrades" style="display:none">
+            <div id="team-upgrades-list"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -602,6 +691,25 @@
   </div>
 </div>
 
+<!-- Hub Modal -->
+<div class="moverlay" id="hub-overlay">
+  <div class="modal" style="max-width:500px">
+    <div class="mttl">🛠 System Hub</div>
+    <div class="msub">Select an administration or utility panel</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <button class="rbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openAdmin();">⚙ Admin</button>
+        <button class="rbtn" style="background:#001a10; border-color:#005533; color:#00aa66; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openDP();">😋 DePoule Mod</button>
+        <button class="rbtn" style="background:#0a0018; border-color:#4400aa; color:#aa77ff; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openManager();">🛠 Manager</button>
+        <button class="rbtn" style="background:#0a1a00; border-color:#336600; color:#88ff44; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openMods();">➕ MODS</button>
+        <button class="rbtn" style="background:#00001a; border-color:#0000aa; color:#4466ff; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openAPS();">🛡 APS</button>
+        <button class="rbtn" style="background:#001a1a; border-color:#006655; color:#00ddaa; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openUpdateLog();">📋 Update Log</button>
+        <button class="rbtn" style="background:#1a1000; border-color:#665500; color:#ffcc44; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openBadges();">🏅 Badges</button>
+    </div>
+    <button class="mbtnclose" onclick="closeHub()">Close</button>
+    <div style="clear:both"></div>
+  </div>
+</div>
+
 <!-- APS Modal -->
 <div class="moverlay" id="aps-overlay">
   <div class="modal" style="max-width:820px;max-height:92vh;overflow-y:auto">
@@ -807,6 +915,117 @@
 
     <button class="mbtnclose" style="background:rgba(200,50,0,.1);color:#ff6644" onclick="closeDPGame()">Close</button>
     <div style="clear:both"></div>
+  </div>
+</div>
+
+<!-- Team Create Modal -->
+<div class="moverlay" id="team-create-overlay" style="display:none">
+  <div class="modal" style="max-width:500px">
+    <div class="mttl" style="color:var(--accent2)">➕ Create Team</div>
+    <div class="msub">Start your own team and invite others</div>
+    <div style="margin:20px 0">
+      <div class="field">
+        <label>Team Name</label>
+        <input id="team-create-name" type="text" maxlength="30" placeholder="Enter team name..." style="width:100%;padding:10px;background:var(--inp);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;outline:none">
+      </div>
+      <div class="field" style="margin-top:15px">
+        <label>Team Tag (3-5 chars)</label>
+        <input id="team-create-tag" type="text" maxlength="5" placeholder="TAG" style="width:100%;padding:10px;background:var(--inp);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;outline:none;text-transform:uppercase">
+      </div>
+      <div style="font-size:.8rem;color:var(--muted);margin-top:10px;padding:8px;background:rgba(255,170,0,.05);border:1px solid rgba(255,170,0,.1);border-radius:5px">
+        💰 Creating a team costs <span style="color:var(--ok);font-weight:700">500 🧢</span>
+      </div>
+    </div>
+    <div id="team-create-msg" style="margin-bottom:10px;font-size:.85rem"></div>
+    <button class="rbtn" onclick="createTeam()">Create Team</button>
+    <button class="mbtnclose" onclick="closeTeamCreate()">Cancel</button>
+  </div>
+</div>
+
+<!-- Team Browser Modal -->
+<div class="moverlay" id="team-browser-overlay" style="display:none">
+  <div class="modal" style="max-width:700px;max-height:85vh;overflow-y:auto">
+    <div class="mttl" style="color:var(--accent2)">🔍 Browse Teams</div>
+    <div class="msub">Find a team to join</div>
+    <div id="team-browser-list" style="margin:20px 0"></div>
+    <button class="mbtnclose" onclick="closeTeamBrowser()">Close</button>
+  </div>
+</div>
+
+<!-- Team Donate Modal -->
+<div class="moverlay" id="team-donate-overlay" style="display:none">
+  <div class="modal" style="max-width:450px">
+    <div class="mttl" style="color:var(--ok)">💰 Donate to Treasury</div>
+    <div class="msub">Support your team's growth</div>
+    <div style="margin:20px 0">
+      <div class="field">
+        <label>Amount (🧢)</label>
+        <input id="team-donate-amt" type="number" min="1" placeholder="Enter amount..." style="width:100%;padding:10px;background:var(--inp);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;outline:none">
+      </div>
+      <div style="font-size:.8rem;color:var(--muted);margin-top:10px">
+        Your balance: <span id="team-donate-balance" style="color:var(--ok);font-weight:700">0 🧢</span>
+      </div>
+    </div>
+    <div id="team-donate-msg" style="margin-bottom:10px;font-size:.85rem"></div>
+    <button class="rbtn" onclick="donateToTeam()">💰 Donate</button>
+    <button class="mbtnclose" onclick="closeTeamDonate()">Cancel</button>
+  </div>
+</div>
+
+<!-- Team Manage Modal -->
+<div class="moverlay" id="team-manage-overlay" style="display:none">
+  <div class="modal" style="max-width:800px;max-height:90vh;overflow-y:auto">
+    <div class="mttl" style="color:var(--accent2)">⚙ Manage Team</div>
+    <div class="msub">Team leader controls</div>
+    
+    <div class="team-manage-tabs" style="display:flex;gap:8px;margin:20px 0 15px">
+      <button class="team-manage-tab on" onclick="switchTeamManageTab('ranks')">📊 Ranks</button>
+      <button class="team-manage-tab" onclick="switchTeamManageTab('permissions')">🔒 Permissions</button>
+      <button class="team-manage-tab" onclick="switchTeamManageTab('upgrades')">⬆ Buy Upgrades</button>
+      <button class="team-manage-tab" onclick="switchTeamManageTab('settings')">⚙ Settings</button>
+    </div>
+
+    <!-- Ranks Tab -->
+    <div class="team-manage-section" id="team-manage-ranks">
+      <div style="margin-bottom:15px">
+        <div style="font-size:.85rem;color:var(--muted);margin-bottom:10px">Assign ranks to team members:</div>
+        <div id="team-manage-members-list"></div>
+      </div>
+    </div>
+
+    <!-- Permissions Tab -->
+    <div class="team-manage-section" id="team-manage-permissions" style="display:none">
+      <div style="margin-bottom:15px">
+        <div style="font-size:.85rem;color:var(--muted);margin-bottom:10px">Customize what each rank can do:</div>
+        <div id="team-manage-permissions-list"></div>
+      </div>
+      <button class="rbtn" style="margin-top:10px" onclick="saveTeamPermissions()">💾 Save Permissions</button>
+    </div>
+
+    <!-- Buy Upgrades Tab -->
+    <div class="team-manage-section" id="team-manage-buy-upgrades" style="display:none">
+      <div style="margin-bottom:10px;padding:10px;background:rgba(255,170,0,.05);border:1px solid rgba(255,170,0,.1);border-radius:6px;font-size:.85rem">
+        Team Treasury: <span id="team-manage-treasury" style="color:var(--ok);font-weight:700">0 🧢</span>
+      </div>
+      <div id="team-manage-upgrades-list"></div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="team-manage-section" id="team-manage-settings" style="display:none">
+      <div class="field">
+        <label>Team Theme</label>
+        <select id="team-theme-select" style="width:100%;padding:10px;background:var(--inp);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;outline:none">
+          <option value="">Default</option>
+        </select>
+      </div>
+      <button class="rbtn" style="margin-top:10px" onclick="saveTeamSettings()">💾 Save Settings</button>
+      <div style="margin-top:20px;padding:12px;background:rgba(255,0,0,.05);border:1px solid rgba(255,0,0,.15);border-radius:6px">
+        <div style="font-size:.85rem;color:var(--bad);margin-bottom:8px;font-weight:700">⚠ Danger Zone</div>
+        <button class="rbtn" style="background:rgba(255,0,0,.2);border-color:var(--bad)" onclick="disbandTeam()">🗑 Disband Team</button>
+      </div>
+    </div>
+
+    <button class="mbtnclose" onclick="closeTeamManage()">Close</button>
   </div>
 </div>
 
