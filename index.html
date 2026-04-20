@@ -241,6 +241,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Ra
 </head>
 <body>
 
+<iframe id="game-frame" src="LiquidType.html" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; border:none; z-index:10001; background:#000; overflow:hidden;"></iframe>
+
 <div id="vignette"></div>
 <div id="bloom"></div>
 <div id="blackout"></div>
@@ -576,7 +578,10 @@ async function runTrailer() {
   buildThemeGrid();
 
   const bgm=$('bgm'); bgm.volume=0;
-  try { await bgm.play(); let v=0; const fi2=setInterval(()=>{v=Math.min(.72,v+.015);bgm.volume=v;if(v>=.72)clearInterval(fi2);},80); } catch(e){}
+  // Start audio in background; don't await so visuals aren't blocked by buffering
+  bgm.play().then(() => {
+    let v=0; const fi2=setInterval(()=>{v=Math.min(.72,v+.015);bgm.volume=v;if(v>=.72)clearInterval(fi2);},80);
+  }).catch(e => console.warn("Audio autoplay blocked or failed"));
 
   // ══ S1: Logo (0–11s) ══
   showScene('s1');
@@ -848,12 +853,27 @@ async function runTrailer() {
       clearInterval(redirectTimer);
       an($('blackout'),[{opacity:0},{opacity:1}],{duration:500,fill:'forwards'});
       await delay(500);
-      window.location.href='https://bottleliquid.github.io/LiquidType';
+      enterGame();
     }
   },1000);
 
   // Fallback redirect
-  setTimeout(()=>{ window.location.href='https://bottleliquid.github.io/LiquidType'; },10000);
+  setTimeout(()=>{ enterGame(); }, TOTAL_MS + 5000);
+}
+
+function enterGame() {
+  aborted = true;
+  if(redirectTimer) clearInterval(redirectTimer);
+  clearInterval(typeIv);
+  const frame = $('game-frame');
+  frame.style.display = 'block';
+  document.body.style.cursor = 'auto';
+  $('stage').style.display = 'none';
+  $('skip-btn').style.display = 'none';
+  $('progress-bar').style.display = 'none';
+  $('blackout').style.opacity = '0';
+  $('vignette').style.display = 'none';
+  $('bloom').style.display = 'none';
 }
 
 function skipToEnd() {
@@ -861,11 +881,11 @@ function skipToEnd() {
   if(redirectTimer)clearInterval(redirectTimer);
   clearInterval(typeIv);
   an($('blackout'),[{opacity:0},{opacity:1}],{duration:350,fill:'forwards'}).onfinish=()=>{
-    window.location.href='https://bottleliquid.github.io/LiquidType';
+    enterGame();
   };
 }
 
-window.addEventListener('load',()=>runTrailer().catch(console.error));
+document.addEventListener('DOMContentLoaded',()=>runTrailer().catch(console.error));
 </script>
 </body>
 </html>

@@ -88,6 +88,11 @@
 </head>
 <body class="theme-default">
 
+<div id="casino-overlay" style="display:none; position:fixed; inset:0; z-index:9999; background:#000;">
+  <button onclick="closeCasino()" class="rbtn" style="position:absolute; top:15px; left:15px; z-index:10000; background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(10px); padding:8px 16px; font-size:0.9rem;">◀ EXIT CASINO</button>
+  <iframe id="casino-frame" src="" style="width:100%; height:100%; border:none;"></iframe>
+</div>
+
 <div id="setup-banner">⚠ Firebase not configured — open liquidtype2.html, find <b>YOUR_PROJECT_ID</b> and paste your config. <a href="https://console.firebase.google.com/" target="_blank">Get config →</a></div>
 
 <div id="loading">
@@ -150,7 +155,7 @@
       <div class="coins">🧢 <span id="coin-count">0</span></div>
       <div class="ubadge" id="nav-user" onclick="openProfile(getU())" style="cursor:pointer;border-color:#553300;color:#ffaa44" title="View your profile">—</div>
       <a href="https://discord.gg/tKCDpUHsFM" target="_blank" class="nbtn dis">Discord</a>
-      <a href="/gamble/index.html" class="nbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; text-decoration:none">🎰 Casino</a>
+      <button class="nbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700;" onclick="openCasino()">🎰 Casino</button>
       <button class="nbtn" style="background:#001a2e;border-color:#003366;color:#4499ff" onclick="openSettings()">⚙ Settings</button>
       <button class="nbtn out" onclick="doLogout()">Logout</button>
     </div>
@@ -189,7 +194,7 @@
         <div class="h-action-buttons">
           <button class="rbtn" onclick="goTab('race')">🏁 Enter Race</button>
           <button class="rbtn" style="background:#1a0a00;border-color:#8b4513;color:#ffaa44" onclick="openDPGame()">🐾 Pet DePoule</button>
-          <a href="/gamble/index.html" class="rbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; text-decoration:none; display:flex; align-items:center; justify-content:center;">🎰 Casino</a>
+          <button class="rbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; display:flex; align-items:center; justify-content:center;" onclick="openCasino()">🎰 Casino</button>
           <button class="rbtn" style="background:#330000;border-color:#660000;color:#ff4444" onclick="openHub()">🛠 System Hub</button>
         </div>
       </div>

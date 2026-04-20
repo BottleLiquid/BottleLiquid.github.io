@@ -61,6 +61,84 @@ async function dbAddMsg(m) {
   if (FB_READY) { await db.collection('messages').doc(m.id).set(m); return; }
   const c=JSON.parse(localStorage.getItem('lt_chat')||'[]'); c.push(m); if(c.length>200)c.splice(0,c.length-200); localStorage.setItem('lt_chat',JSON.stringify(c)); chatCache=c; renderChat();
 }
+
+// ── IMAGE UPLOAD via ImgBB ───────────────────────────────
+const IMGBB_KEY = 'b088b5b5f1b8a28985b9d0f7e5e7b1e9'; // free public key
+async function uploadImageToImgbb(file) {
+  if (file.size > 8 * 1024 * 1024) { showToast('Image too large (max 8MB)'); return null; }
+  if (!file.type.startsWith('image/')) { showToast('Only images allowed'); return null; }
+  const fd = new FormData();
+  fd.append('image', file);
+  try {
+    showToast('Uploading image...');
+    const r = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method:'POST', body:fd });
+    const d = await r.json();
+    if (d.success) return d.data.url;
+    showToast('Upload failed. Try again.');
+    return null;
+  } catch(e) { showToast('Upload failed. Try again.'); return null; }
+}
+
+// ── CHEAT DETECTION ─────────────────────────────────────
+// Save a snapshot of coins every 5 mins for rollback
+const CHEAT_LIMIT = 100_000_000;
+let _coinSnapshot = null;
+let _coinSnapshotTime = 0;
+function updateCoinSnapshot() {
+  if (!UC) return;
+  _coinSnapshot = UC.coins || 0;
+  _coinSnapshotTime = Date.now();
+}
+function scheduleSnapshotLoop() {
+  setInterval(() => { updateCoinSnapshot(); }, 5 * 60 * 1000); // every 5 mins
+}
+async function checkCoinCheat() {
+  if (!UC) return;
+  if ((UC.coins || 0) > CHEAT_LIMIT) {
+    // Rollback to snapshot (or 0 if no snapshot yet)
+    const rollback = _coinSnapshot !== null ? _coinSnapshot : 0;
+    UC.coins = rollback;
+    await dbUpdateUser(getU(), { coins: rollback });
+    refreshCoins();
+    showCheatWarning();
+  }
+}
+function showCheatWarning() {
+  // Full-screen hostile warning
+  let ov = document.getElementById('cheat-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'cheat-overlay';
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `
+    <div class="cheat-inner">
+      <div class="cheat-skull">💀</div>
+      <div class="cheat-msg">BUDDY STOP CHEATING UR COOKED!!!</div>
+      <div class="cheat-sub">Your coins have been rolled back. We're watching.</div>
+      <button class="cheat-dismiss" onclick="document.getElementById('cheat-overlay').style.display='none'">I'm Sorry</button>
+    </div>`;
+  ov.style.display = 'flex';
+}
+
+// ── AUTO-DELETE OLD MESSAGES (>24h) ─────────────────────
+async function deleteOldMessages() {
+  if (!FB_READY) return;
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000; // 24 hours ago
+  try {
+    // Main chat
+    const msgSnap = await db.collection('messages').where('ts', '<', cutoff).get();
+    const batch1 = db.batch();
+    msgSnap.docs.forEach(d => batch1.delete(d.ref));
+    if (msgSnap.size > 0) await batch1.commit();
+
+    // Team chat
+    const teamSnap = await db.collection('team_messages').where('ts', '<', cutoff).get();
+    const batch2 = db.batch();
+    teamSnap.docs.forEach(d => batch2.delete(d.ref));
+    if (teamSnap.size > 0) await batch2.commit();
+  } catch(e) { console.warn('deleteOldMessages error:', e); }
+}
 async function dbDelMsg(id) {
   const _delMsg=chatCache.find(x=>x.id===id); if(_delMsg)venTypeTrackDelete(id,_delMsg.text);
   if (FB_READY) { await db.collection('messages').doc(id).delete(); return; }
@@ -254,9 +332,9 @@ function enterApp() {
   document.getElementById('auth').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('nav-user').textContent=UC.username;
-  refreshCoins(); applyTheme(UC.activeTheme||'default',UC.gradientColors||null);
+  refreshCoins(); applyTheme(UC.activeTheme||'default',UC.gradientColors||null); updateCoinSnapshot(); scheduleSnapshotLoop(); deleteOldMessages();
   goTab('home');
-  renderShop(); startChatListener(); renderLB(); startDMListener(); loadBannedWords(); checkTrollNotif(); applyActiveTrollEffects(); startTrollEffectWatcher();
+  renderShop(); startChatListener(); renderLB(); startDMListener(); loadBannedWords(); syncActiveAbilities(); checkTrollNotif(); applyActiveTrollEffects(); startTrollEffectWatcher();
   loadDPThemesIntoShop().then(()=>{if(UC&&UC.activeTheme&&UC.activeTheme.startsWith("dp_"))applyDPTheme(UC.activeTheme);});
   if(UC.activeMods&&UC.activeMods.length){activeMods=new Set(UC.activeMods);applyAllMods();}
   setTimeout(async()=>{await checkAndGrantSecretThemes(0);await checkBadges({streak:UC.streak||1});},1500);
@@ -266,11 +344,13 @@ function enterApp() {
 
 // ── NAV ────────────────────────────────────────────────
 function goTab(id) {
-  document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('on',['home','race','teams','shop','chat','lb','dm'][i]===id));
+  document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('on',['home','race','teams','items','inventory','shop','chat','lb','dm'][i]===id));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('tab-'+id).classList.add('on');
   if(id==='home') renderHome();
   if(id==='teams') renderTeamsTab();
+  if(id==='items') renderItemsShop();
+  if(id==='inventory') renderInventory();
   if(id==='shop'){renderShop();}
   if(id==='chat')setTimeout(scrollMsgs,50);
   if(id==='lb')renderLB();
@@ -278,8 +358,15 @@ function goTab(id) {
 }
 function refreshCoins() {
   const c=UC?(UC.coins||0):0;
+  // Check for cheating every time coins are refreshed
+  if (UC && (UC.coins || 0) > 100_000_000) { checkCoinCheat(); return; }
   document.getElementById('coin-count').textContent=c;
-  document.getElementById('shop-coins').textContent=c;
+  const shopEl = document.getElementById('shop-coins');
+  if (shopEl) shopEl.textContent=c;
+  const itemsEl = document.getElementById('items-coins');
+  if (itemsEl) itemsEl.textContent=c;
+  const invEl = document.getElementById('inv-coins');
+  if (invEl) invEl.textContent=c;
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function esca(s){return String(s).replace(/'/g,"\\'")}
@@ -833,21 +920,333 @@ function lghtn(h,a){const n=parseInt(h.replace('#',''),16);return `#${Math.min(2
 function gmPreview(){const c1=document.getElementById('gm1').value,c2=document.getElementById('gm2').value,c3=document.getElementById('gm3').value;document.getElementById('gmprev').style.background=`linear-gradient(135deg,${c1},${c2},${c3})`;}
 async function applyGradient(){const c={c1:document.getElementById('gm1').value,c2:document.getElementById('gm2').value,c3:document.getElementById('gm3').value,ca:document.getElementById('gma').value};if(UC)UC.gradientColors=c;await dbUpdateUser(getU(),{gradientColors:c,activeTheme:'custom'});applyGradVars(c);applyTheme('custom',c);showToast('Gradient applied! ✨');}
 
+// ── ITEMS SYSTEM ────────────────────────────────────────
+// Get all shop items from Firebase
+async function getAllShopItems() {
+  if (!FB_READY) return [];
+  const snapshot = await db.collection('shopItems').get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+// Render Items Shop
+async function renderItemsShop() {
+  if (!UC) return;
+  const coinsEl = document.getElementById('items-coins');
+  if (coinsEl) coinsEl.textContent = UC.coins || 0;
+  
+  const grid = document.getElementById('items-shop-grid');
+  const items = await getAllShopItems();
+  
+  if (items.length === 0) {
+    grid.innerHTML = '<div class="empty">No items available yet. Check back soon!</div>';
+    return;
+  }
+  
+  grid.innerHTML = items.map(item => {
+    const owned = (UC.inventory || []).includes(item.id);
+    const canBuy = (UC.coins || 0) >= (item.price || 0);
+    const outOfStock = item.stock > 0 && item.purchased >= item.stock;
+    
+    let button = '';
+    if (owned) {
+      button = '<div class="item-owned">✓ OWNED</div>';
+    } else if (outOfStock) {
+      button = '<div class="item-sold-out">SOLD OUT</div>';
+    } else if (item.unique && owned) {
+      button = '<div class="item-owned">✓ OWNED</div>';
+    } else {
+      button = `<button class="item-buy-btn" onclick="buyItem('${esca(item.id)}')" ${!canBuy ? 'disabled' : ''}>Buy for ${item.price} 💧</button>`;
+    }
+    
+    return `
+      <div class="item-card">
+        <div class="item-icon">${esc(item.icon || '🎁')}</div>
+        <div class="item-name">${esc(item.name)}</div>
+        <div class="item-desc">${esc(item.description)}</div>
+        ${item.ability ? `<div class="item-ability">⚡ ${getAbilityName(item.ability)}</div>` : ''}
+        ${item.stock > 0 ? `<div class="item-stock">${item.stock - (item.purchased || 0)} left</div>` : ''}
+        ${button}
+      </div>
+    `;
+  }).join('');
+}
+
+// Render Inventory
+async function renderInventory() {
+  if (!UC) return;
+  const coinsEl = document.getElementById('inv-coins');
+  if (coinsEl) coinsEl.textContent = UC.coins || 0;
+  
+  const grid = document.getElementById('inventory-grid');
+  const inventory = UC.inventory || [];
+  
+  if (inventory.length === 0) {
+    grid.innerHTML = '<div class="empty">Your inventory is empty. Buy items from the shop!</div>';
+    return;
+  }
+  
+  const allItems = await getAllShopItems();
+  const ownedItems = allItems.filter(item => inventory.includes(item.id));
+  
+  grid.innerHTML = ownedItems.map(item => {
+    const isActive = UC.activeItems && UC.activeItems.includes(item.id);
+    
+    return `
+      <div class="inv-item-card ${isActive ? 'active' : ''}">
+        <div class="item-icon">${esc(item.icon || '🎁')}</div>
+        <div class="item-name">${esc(item.name)}</div>
+        <div class="item-desc">${esc(item.description)}</div>
+        ${item.ability ? `<div class="item-ability">⚡ ${getAbilityName(item.ability)}</div>` : ''}
+        ${isActive 
+          ? '<div class="item-active-badge">ACTIVE</div><button class="item-deactivate-btn" onclick="deactivateItem(\'' + esca(item.id) + '\')">Deactivate</button>'
+          : '<button class="item-activate-btn" onclick="activateItem(\'' + esca(item.id) + '\')">Activate</button>'
+        }
+      </div>
+    `;
+  }).join('');
+}
+
+// Buy item
+async function buyItem(itemId) {
+  if (!UC) return;
+  
+  const allItems = await getAllShopItems();
+  const item = allItems.find(i => i.id === itemId);
+  
+  if (!item) {
+    showToast('Item not found!');
+    return;
+  }
+  
+  // Check if already owned
+  if ((UC.inventory || []).includes(itemId)) {
+    showToast('You already own this item!');
+    return;
+  }
+  
+  // Check if enough coins
+  if ((UC.coins || 0) < (item.price || 0)) {
+    showToast('Not enough bottlecaps!');
+    return;
+  }
+  
+  // Check stock
+  if (item.stock > 0 && item.purchased >= item.stock) {
+    showToast('This item is sold out!');
+    return;
+  }
+  
+  // Purchase item
+  UC.coins -= item.price;
+  UC.inventory = [...(UC.inventory || []), itemId];
+  
+  await dbUpdateUser(getU(), {
+    coins: UC.coins,
+    inventory: UC.inventory
+  });
+  
+  // Update item stock
+  if (FB_READY) {
+    await db.collection('shopItems').doc(itemId).update({
+      purchased: (item.purchased || 0) + 1
+    });
+  }
+  
+  refreshCoins();
+  renderItemsShop();
+  showToast(`✅ ${item.name} purchased!`);
+}
+
+// Activate item
+async function activateItem(itemId) {
+  if (!UC) return;
+
+  UC.activeItems = [...(UC.activeItems || []), itemId];
+  await dbUpdateUser(getU(), { activeItems: UC.activeItems });
+
+  // Immediately sync abilities so hasActiveAbility works right away
+  await syncActiveAbilities();
+
+  const allItems = await getAllShopItems();
+  const item = allItems.find(i => i.id === itemId);
+
+  renderInventory();
+  showToast(`✅ ${item ? item.name : 'Item'} activated!`);
+}
+
+// Deactivate item
+async function deactivateItem(itemId) {
+  if (!UC) return;
+
+  UC.activeItems = (UC.activeItems || []).filter(id => id !== itemId);
+  await dbUpdateUser(getU(), { activeItems: UC.activeItems });
+
+  // Remove from active abilities immediately
+  if (UC.activeAbilities) {
+    delete UC.activeAbilities[itemId];
+    await dbUpdateUser(getU(), { activeAbilities: UC.activeAbilities });
+  }
+
+  const allItems = await getAllShopItems();
+  const item = allItems.find(i => i.id === itemId);
+
+  renderInventory();
+  showToast(`${item ? item.name : 'Item'} deactivated.`);
+}
+
+// Get ability display name
+function getAbilityName(ability) {
+  const names = {
+    bypass_moderation: '🔓 Bypass Moderation',
+    bypass_reports: '🛡 Bypass Reports',
+    coin_boost: '💰 +10% Coins',
+    double_xp: '⚡ 2× XP',
+    vip_badge: '👑 VIP Badge',
+    custom_color: '🎨 Custom Color',
+    infinite_streak: '🔥 Streak Protection'
+  };
+  return names[ability] || ability;
+}
+
+// UC.activeAbilities = { itemId: abilityString, ... }
+// Populated when items are activated, saved to Firestore.
+// hasActiveAbility checks this directly — no async cache, no race conditions.
+
+function hasActiveAbility(ability) {
+  if (!UC || !UC.activeAbilities) return false;
+  return Object.values(UC.activeAbilities).includes(ability);
+}
+
+// Rebuild UC.activeAbilities from scratch (called on login + after activate/deactivate)
+async function syncActiveAbilities() {
+  if (!UC) return;
+  const activeItems = UC.activeItems || [];
+  if (!activeItems.length) {
+    UC.activeAbilities = {};
+    return;
+  }
+  try {
+    const snap = await db.collection('shopItems').get();
+    const abilityMap = {};
+    snap.docs.forEach(doc => {
+      if (activeItems.includes(doc.id)) {
+        const d = doc.data();
+        if (d.ability) abilityMap[doc.id] = d.ability;
+      }
+    });
+    UC.activeAbilities = abilityMap;
+    // Persist so it's available on next load without a re-fetch
+    await dbUpdateUser(getU(), { activeAbilities: abilityMap });
+  } catch(e) { console.warn('syncActiveAbilities failed:', e); }
+}
+
+// DP: Create Item
+async function dpCreateItem() {
+  const name = document.getElementById('dp-item-name').value.trim();
+  const desc = document.getElementById('dp-item-desc').value.trim();
+  const icon = document.getElementById('dp-item-icon').value.trim();
+  const ability = document.getElementById('dp-item-ability').value;
+  const price = parseInt(document.getElementById('dp-item-price').value) || 0;
+  const stock = parseInt(document.getElementById('dp-item-stock').value) || 0;
+  const unique = document.getElementById('dp-item-unique').checked;
+  
+  if (!name) {
+    showToast('Item name is required!');
+    return;
+  }
+  
+  if (!FB_READY) {
+    showToast('Firebase not ready!');
+    return;
+  }
+  
+  const itemData = {
+    name,
+    description: desc || 'A special item',
+    icon: icon || '🎁',
+    ability: ability || null,
+    price,
+    stock,
+    unique,
+    purchased: 0,
+    createdAt: Date.now()
+  };
+  
+  // Add to Firebase
+  await db.collection('shopItems').add(itemData);
+  
+  // Clear form
+  document.getElementById('dp-item-name').value = '';
+  document.getElementById('dp-item-desc').value = '';
+  document.getElementById('dp-item-icon').value = '';
+  document.getElementById('dp-item-ability').value = '';
+  document.getElementById('dp-item-price').value = '500';
+  document.getElementById('dp-item-stock').value = '0';
+  document.getElementById('dp-item-unique').checked = false;
+  
+  showToast(`✅ ${name} created!`);
+  dpLoadItems();
+}
+
+// DP: Load items list
+async function dpLoadItems() {
+  if (!FB_READY) return;
+  
+  const items = await getAllShopItems();
+  const el = document.getElementById('dp-items-list');
+  
+  if (items.length === 0) {
+    el.innerHTML = '<div class="empty">No items created yet.</div>';
+    return;
+  }
+  
+  el.innerHTML = items.map(item => `
+    <div class="dp-item-row">
+      <div style="display:flex;align-items:center;gap:10px;flex:1">
+        <span style="font-size:1.5rem">${esc(item.icon)}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:.9rem">${esc(item.name)}</div>
+          <div style="font-size:.75rem;color:var(--muted)">${item.price} 💧 • ${item.stock > 0 ? (item.stock - (item.purchased || 0)) + ' left' : '∞ stock'}</div>
+        </div>
+      </div>
+      <button class="bsm" style="background:rgba(255,0,0,.15);border-color:#aa0000;padding:4px 12px;font-size:.8rem" onclick="dpDeleteItem('${esca(item.id)}')">Delete</button>
+    </div>
+  `).join('');
+}
+
+// DP: Delete item
+async function dpDeleteItem(itemId) {
+  if (!confirm('Delete this item? This cannot be undone.')) return;
+  
+  if (!FB_READY) return;
+  
+  await db.collection('shopItems').doc(itemId).delete();
+  showToast('Item deleted.');
+  dpLoadItems();
+}
+
 // ── CHAT ────────────────────────────────────────────────
 async function sendChat(){
   const inp=document.getElementById('cinput'), text=inp.value.trim();
   const username = getU();
   if(!text||!username)return;
-  if(UC&&UC.muted){showToast('🔇 You are muted and cannot chat.');inp.value='';return;}
+  // bypass_moderation item overrides mute
+  if(UC&&UC.muted&&!hasActiveAbility('bypass_moderation')){showToast('🔇 You are muted and cannot chat.');inp.value='';return;}
   inp.value='';
   
-  const filteredText=applyWordFilter(text);
+  // bypass_moderation item skips word filter entirely
+  const filteredText = hasActiveAbility('bypass_moderation') ? text : applyWordFilter(text);
   const replyData=chatReplyTarget?{...chatReplyTarget}:null;
   chatClearReply();
   // Include team tag in message
   const teamTag = UC && UC.teamTag ? UC.teamTag : null;
-  // Original Firebase logic
-  await dbAddMsg({id:'m'+Date.now()+Math.random().toString(36).substr(2,4),username,text:filteredText,ts:Date.now(),edited:false,pinned:false,replyTo:replyData||null,teamTag:teamTag});
+  // Handle pending image attachment
+  const pendingImg = window._chatPendingImage || null;
+  window._chatPendingImage = null;
+  clearChatImagePreview();
+  const msgObj = {id:'m'+Date.now()+Math.random().toString(36).substr(2,4),username,text:filteredText,ts:Date.now(),edited:false,pinned:false,replyTo:replyData||null,teamTag:teamTag};
+  if (pendingImg) msgObj.imageUrl = pendingImg;
+  await dbAddMsg(msgObj);
   if(!FB_READY)scrollMsgs();
 
   // Additional Cloudflare Worker sync
@@ -883,7 +1282,7 @@ function renderChat(){
     const actions=`<div class="msg-actions">${isOwn?actionsOwn:''}${actionsAll}</div>`;
     const editWrap=isOwn?`<div class="msg-edit-wrap" id="edit-wrap-${m.id}"><input class="edit-inp" id="edit-inp-${m.id}" value="${esc(m.text)}" maxlength="250" onkeydown="if(event.key==='Enter')chatSaveEdit('${esca(m.id)}');if(event.key==='Escape')chatCancelEdit('${esca(m.id)}')"><button class="edit-save" onclick="chatSaveEdit('${esca(m.id)}')">Save</button><button class="edit-cancel" onclick="chatCancelEdit('${esca(m.id)}')">Cancel</button></div>`:'';
     if(hideMsg)return'';
-    return `<div class="cmsg${m.pinned?' msg-is-pinned':''}${spyHighlight}${mentionHL}" data-id="${m.id}" id="cmsg-${m.id}">${actions}<div class="cavatar" onclick="openProfile('${esca(m.username)}')" style="cursor:pointer">${esc(m.username.charAt(0).toUpperCase())}</div><div class="cbody">${replyHTML}<div class="chdr"><span class="cuser" onclick="openProfile('${esca(m.username)}')">${esc(m.username)}</span>${teamTag}<span class="ctime">${(activeMods.has('timestamps')&&window._modFullTs?new Date(m.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))}</span>${editedTag}${trolledTag}${pinnedTag}${richIcon}${activeMods.has('rainbowname')&&m.username===getU()?'<style>.cmsg[id="cmsg-'+m.id+'"] .cuser{animation:rainbowText 2s linear infinite}</style>':''}</div><div class="ctext" id="ctext-${m.id}">${esc(m.text)}</div>${activeMods.has('wordcount')?`<div class="mod-wordcount">${m.text.trim().split(/\s+/).length} words</div>`:''}
+    return `<div class="cmsg${m.pinned?' msg-is-pinned':''}${spyHighlight}${mentionHL}" data-id="${m.id}" id="cmsg-${m.id}">${actions}<div class="cavatar" onclick="openProfile('${esca(m.username)}')" style="cursor:pointer">${esc(m.username.charAt(0).toUpperCase())}</div><div class="cbody">${replyHTML}<div class="chdr"><span class="cuser" onclick="openProfile('${esca(m.username)}')">${esc(m.username)}</span>${teamTag}<span class="ctime">${(activeMods.has('timestamps')&&window._modFullTs?new Date(m.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):new Date(m.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))}</span>${editedTag}${trolledTag}${pinnedTag}${richIcon}${activeMods.has('rainbowname')&&m.username===getU()?'<style>.cmsg[id="cmsg-'+m.id+'"] .cuser{animation:rainbowText 2s linear infinite}</style>':''}</div><div class="ctext" id="ctext-${m.id}">${esc(m.text)}</div>${m.imageUrl?`<div class="chat-img-wrap"><img class="chat-img" src="${esc(m.imageUrl)}" alt="image" onclick="window.open('${esc(m.imageUrl)}','_blank')" loading="lazy"></div>`:''} ${activeMods.has('wordcount')?`<div class="mod-wordcount">${m.text.trim().split(/\s+/).length} words</div>`:''}
 ${vtHistory}${editWrap}</div></div>`;
   }).join('');
   if(atBot)scrollMsgs();
@@ -992,7 +1391,7 @@ async function rmMsg(id,src){await modDel(id,src);}
 let DP_PW=''; let dpOpen=false;
 function openDP(){document.getElementById('dp-overlay').classList.add('on');document.getElementById('dp-pw').value='';document.getElementById('dp-err').textContent='';if(dpOpen)renderDPChat();}
 function closeDP(){document.getElementById('dp-overlay').classList.remove('on');}
-function tryDP(){const v=document.getElementById('dp-pw').value;if(v===DP_PW){dpOpen=true;document.getElementById('dp-lock').style.display='none';document.getElementById('dp-open').classList.add('on');renderDPChat();renderDPReports();renderDPCodes();renderDPWordFilter();renderDPPublishedThemes();}else document.getElementById('dp-err').textContent='Wrong password.';}
+function tryDP(){const v=document.getElementById('dp-pw').value;if(v===DP_PW){dpOpen=true;document.getElementById('dp-lock').style.display='none';document.getElementById('dp-open').classList.add('on');renderDPChat();renderDPReports();renderDPCodes();renderDPWordFilter();renderDPPublishedThemes();dpLoadItems();}else document.getElementById('dp-err').textContent='Wrong password.';}
 function renderDPReports(){
   const el=document.getElementById('dp-reports');
   if(!el)return;
@@ -1076,6 +1475,18 @@ async function submitReport(){
   if(!FB_READY){showToast('Reports require Firebase.');return;}
   const btn=document.getElementById('report-submit-btn');
   btn.disabled=true;btn.textContent='Sending…';
+  // Check if the accused player has the bypass_reports ability active
+  try {
+    const accusedData = await dbGetUser(reportTarget);
+    if (accusedData && accusedData.activeItems && accusedData.activeItems.length) {
+      const hasReportBypass = accusedData.activeItems.some(itemId => _itemAbilityCache[itemId] === 'bypass_reports');
+      if (hasReportBypass) {
+        btn.disabled=false; btn.textContent='Submit Report';
+        document.getElementById('report-err').textContent='This player cannot be reported.';
+        return;
+      }
+    }
+  } catch(e) {}
   await db.collection('reports').add({accused:reportTarget,reporter:getU(),reason,ts:Date.now(),status:'pending'});
   await checkBadges({reports:true});
   closeReportModal();
@@ -1645,7 +2056,7 @@ async function sendDM(){
   if(!convo)return;
   const me=getU();
   const other=convo.participants.find(p=>p!==me);
-  const dmFiltered=applyWordFilter(text);
+  const dmFiltered = hasActiveAbility('bypass_moderation') ? text : applyWordFilter(text);
   const dmReply=dmReplyTarget?{...dmReplyTarget}:null;
   dmClearReply();
   const msg={id:'d'+Date.now()+Math.random().toString(36).substr(2,4),from:me,text:dmFiltered,ts:Date.now(),replyTo:dmReply};
@@ -3546,9 +3957,42 @@ function renderTeamChat() {
   msgs.scrollTop = msgs.scrollHeight;
 }
 
+
+// ── CHAT IMAGE HELPERS ───────────────────────────────────
+async function chatAttachImage() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async () => {
+    const file = input.files[0]; if (!file) return;
+    const url = await uploadImageToImgbb(file);
+    if (!url) return;
+    window._chatPendingImage = url;
+    showChatImagePreview(url);
+    showToast('Image ready — hit Send!');
+  };
+  input.click();
+}
+function showChatImagePreview(url) {
+  let prev = document.getElementById('chat-img-preview');
+  if (!prev) {
+    prev = document.createElement('div');
+    prev.id = 'chat-img-preview';
+    prev.className = 'chat-img-preview-bar';
+    const foot = document.querySelector('.chat-foot');
+    if (foot) foot.parentNode.insertBefore(prev, foot);
+  }
+  prev.innerHTML = `<img src="${url}" alt="preview"><span>Image attached</span><button onclick="clearChatImagePreview()">✕</button>`;
+  prev.style.display = 'flex';
+}
+function clearChatImagePreview() {
+  window._chatPendingImage = null;
+  const prev = document.getElementById('chat-img-preview');
+  if (prev) prev.style.display = 'none';
+}
+
 async function sendTeamChat() {
   if (!teamCache || !UC) return;
-  if (UC.muted) { showToast('🔇 You are muted and cannot chat.'); return; }
+  if (UC.muted && !hasActiveAbility('bypass_moderation')) { showToast('🔇 You are muted and cannot chat.'); return; }
   
   const input = document.getElementById('team-chat-input');
   const text = input.value.trim();
@@ -3561,7 +4005,7 @@ async function sendTeamChat() {
     id: 'tm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
     teamId: teamCache.id,
     user: UC.username,
-    text: applyWordFilter(text),
+    text: hasActiveAbility('bypass_moderation') ? text : applyWordFilter(text),
     ts: Date.now()
   };
   
@@ -4100,6 +4544,23 @@ async function disbandTeam() {
   renderTeamsTab();
 }
 
+function openCasino() {
+  const ov = document.getElementById('casino-overlay');
+  const frame = document.getElementById('casino-frame');
+  if (ov && frame) {
+    frame.src = '/gamble/index.html';
+    ov.style.display = 'block';
+  }
+}
+function closeCasino() {
+  const ov = document.getElementById('casino-overlay');
+  const frame = document.getElementById('casino-frame');
+  if (ov && frame) {
+    ov.style.display = 'none';
+    frame.src = ''; // Stop sounds/scripts from the casino when closed
+  }
+}
+
 async function init() {
   const setStatus = (msg) => { const el = document.getElementById('ld-status'); if(el) el.textContent = msg; };
   
@@ -4128,4 +4589,17 @@ async function init() {
   
   showWelcomeScreen();
 }
+
+// Global listeners for non-button exits
+window.addEventListener('popstate', () => {
+  if (document.getElementById('casino-overlay')?.style.display === 'block') {
+    closeCasino(true);
+  }
+});
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('casino-overlay')?.style.display === 'block') {
+    closeCasino();
+  }
+});
+
 init();
