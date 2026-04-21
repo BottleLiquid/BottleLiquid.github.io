@@ -88,11 +88,6 @@
 </head>
 <body class="theme-default">
 
-<div id="casino-overlay" style="display:none; position:fixed; inset:0; z-index:9999; background:#000;">
-  <button onclick="closeCasino()" class="rbtn" style="position:absolute; top:15px; left:15px; z-index:10000; background:rgba(0,0,0,0.7); border:1px solid rgba(255,255,255,0.2); backdrop-filter:blur(10px); padding:8px 16px; font-size:0.9rem;">◀ EXIT CASINO</button>
-  <iframe id="casino-frame" src="" style="width:100%; height:100%; border:none;"></iframe>
-</div>
-
 <div id="setup-banner">⚠ Firebase not configured — open liquidtype2.html, find <b>YOUR_PROJECT_ID</b> and paste your config. <a href="https://console.firebase.google.com/" target="_blank">Get config →</a></div>
 
 <div id="loading">
@@ -146,16 +141,19 @@
       <button class="ntab on" onclick="goTab('home')">🏠 Home</button>
       <button class="ntab" onclick="goTab('race')">🏁 Race</button>
       <button class="ntab" onclick="goTab('teams')">👥 Teams</button>
+      <button class="ntab" onclick="goTab('items')">🎁 Items</button>
+      <button class="ntab" onclick="goTab('inventory')">🎒 Inventory</button>
       <button class="ntab" onclick="goTab('shop')">🛒 Shop</button>
       <button class="ntab" onclick="goTab('chat')">💬 Chat</button>
       <button class="ntab" onclick="goTab('lb')">🏆 Leaderboard</button>
       <div class="dm-ntab-wrap"><button class="ntab" onclick="goTab('dm')">✉ DMs</button><div class="dm-notif" id="dm-notif"></div></div>
+      <button class="ntab" onclick="goTab('society')">🏰 Society</button>
     </div>
     <div class="nav-r">
       <div class="coins">🧢 <span id="coin-count">0</span></div>
       <div class="ubadge" id="nav-user" onclick="openProfile(getU())" style="cursor:pointer;border-color:#553300;color:#ffaa44" title="View your profile">—</div>
       <a href="https://discord.gg/tKCDpUHsFM" target="_blank" class="nbtn dis">Discord</a>
-      <button class="nbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700;" onclick="openCasino()">🎰 Casino</button>
+      <a href="/gamble/index.html" class="nbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; text-decoration:none">🎰 Casino</a>
       <button class="nbtn" style="background:#001a2e;border-color:#003366;color:#4499ff" onclick="openSettings()">⚙ Settings</button>
       <button class="nbtn out" onclick="doLogout()">Logout</button>
     </div>
@@ -194,8 +192,17 @@
         <div class="h-action-buttons">
           <button class="rbtn" onclick="goTab('race')">🏁 Enter Race</button>
           <button class="rbtn" style="background:#1a0a00;border-color:#8b4513;color:#ffaa44" onclick="openDPGame()">🐾 Pet DePoule</button>
-          <button class="rbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; display:flex; align-items:center; justify-content:center;" onclick="openCasino()">🎰 Casino</button>
+          <a href="/gamble/index.html" class="rbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; text-decoration:none; display:flex; align-items:center; justify-content:center;">🎰 Casino</a>
           <button class="rbtn" style="background:#330000;border-color:#660000;color:#ff4444" onclick="openHub()">🛠 System Hub</button>
+          
+          <div class="card-panel" style="margin-top:15px; border-color:#8b4513; background:rgba(139,69,19,.05)">
+            <div id="kingdom-info" style="font-size:.85rem; color:var(--text); text-align:center; margin-bottom:8px">Loading Kingdom...</div>
+            <div style="display:flex; gap:8px;">
+              <button id="king-manage-btn" class="rbtn" style="flex:1; font-size:.8rem; background:#4a3200; border-color:#ffd700; color:#ffd700; display:none" onclick="openKingdomManager()">👑 Manage</button>
+              <button class="rbtn" style="flex:1; font-size:.8rem; background:#001a1a; border-color:#00ddaa; color:#00ddaa" onclick="openRoyalLedger()">📜 Ledger</button>
+              <button id="election-btn" class="rbtn" style="flex:1; font-size:.8rem; background:#001a2e; border-color:#00c8ff; color:#00c8ff; display:none" onclick="openElectionModal()">🗳️ Election</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -260,6 +267,15 @@
       </div>
       <button class="rbtn" onclick="resetRace()">Race Again</button>
     </div>
+  </div>
+
+  <!-- SOCIETY -->
+  <div id="tab-society" class="tab">
+    <div class="teams-hdr">
+      <div class="teams-ttl">🏰 Kingdom Society</div>
+      <div class="teams-sub">The hierarchy and dungeon of LiquidType</div>
+    </div>
+    <div id="society-content"></div>
   </div>
 
   <!-- TEAMS -->
@@ -340,6 +356,28 @@
     </div>
   </div>
 
+  <!-- ITEMS SHOP -->
+  <div id="tab-items" class="tab">
+    <div class="shop-hdr">
+      <div class="shop-ttl">🎁 Items Shop</div>
+      <div class="shop-bal">🧢 <span id="items-coins">0</span> bottlecaps</div>
+    </div>
+    <div class="items-shop-grid" id="items-shop-grid">
+      <div class="empty">No items available yet. Check back soon!</div>
+    </div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div id="tab-inventory" class="tab">
+    <div class="shop-hdr">
+      <div class="shop-ttl">🎒 My Inventory</div>
+      <div class="shop-bal">🧢 <span id="inv-coins">0</span> bottlecaps</div>
+    </div>
+    <div class="inventory-grid" id="inventory-grid">
+      <div class="empty">Your inventory is empty. Buy items from the shop!</div>
+    </div>
+  </div>
+
   <!-- SHOP -->
   <div id="tab-shop" class="tab">
     <div class="shop-hdr"><div class="shop-ttl">Theme Shop</div><div class="shop-bal">🧢 <span id="shop-coins">0</span> bottlecaps</div></div>
@@ -367,6 +405,7 @@
             <button onclick="chatClearReply()" style="border:none;background:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:0 4px">✕</button>
           </div>
           <input class="cinput" id="cinput" placeholder="Say something…" maxlength="250" onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="cimg-btn" onclick="chatAttachImage()" title="Attach image">🖼</button>
           <button class="csend" onclick="sendChat()">Send</button>
         </div>
       </div>
@@ -522,6 +561,43 @@
         <div style="font-size:.76rem;color:var(--muted);margin-bottom:8px;line-height:1.5">One word/phrase per line. Variants like <code style="background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px">f.u.c.k</code> and <code style="background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px">fu ck</code> are caught automatically.</div>
         <textarea id="dp-words-input" rows="5" placeholder="fuck&#10;ass&#10;spam phrase" style="width:100%;padding:8px 10px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.82rem;outline:none;resize:vertical"></textarea>
         <button class="bsm give" style="margin-top:7px;padding:8px 16px;font-size:.85rem" onclick="dpSaveBannedWords()">💾 Save Filter</button>
+      </div>
+      <div class="msec" style="margin-top:18px">
+        <div class="msec-ttl dp">🎁 Create Item</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input id="dp-item-name" type="text" placeholder="Item Name (e.g. LittleDefault)" maxlength="50" style="padding:8px 10px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.9rem;outline:none">
+          <textarea id="dp-item-desc" rows="2" placeholder="Description (e.g. DEFAULT'S CHILD THAT HE RAISED UP FROM THE GROUND!!!)" maxlength="200" style="width:100%;padding:8px 10px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.9rem;outline:none;resize:vertical"></textarea>
+          <input id="dp-item-icon" type="text" placeholder="Icon/Emoji (e.g. 😱)" maxlength="4" style="padding:8px 10px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:1.5rem;outline:none;text-align:center">
+          <select id="dp-item-ability" style="padding:8px 10px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.9rem;outline:none">
+            <option value="">No ability</option>
+            <option value="bypass_moderation">🔓 Bypass Moderation</option>
+            <option value="bypass_reports">🛡 Bypass Reports</option>
+            <option value="coin_boost">💰 +10% Coin Boost</option>
+            <option value="double_xp">⚡ Double XP</option>
+            <option value="vip_badge">👑 VIP Badge</option>
+            <option value="custom_color">🎨 Custom Name Color</option>
+            <option value="infinite_streak">🔥 Infinite Streak Protection</option>
+          </select>
+          <div style="display:flex;gap:6px">
+            <div style="flex:1">
+              <div style="font-size:.72rem;color:var(--muted);margin-bottom:3px">Price (💧)</div>
+              <input id="dp-item-price" type="number" value="500" min="0" style="width:100%;padding:8px 10px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.9rem;outline:none">
+            </div>
+            <div style="flex:1">
+              <div style="font-size:.72rem;color:var(--muted);margin-bottom:3px">Stock (0=∞)</div>
+              <input id="dp-item-stock" type="number" value="0" min="0" style="width:100%;padding:8px 10px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.9rem;outline:none">
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="dp-item-unique" style="width:18px;height:18px;cursor:pointer">
+            <label for="dp-item-unique" style="font-size:.85rem;color:var(--muted);cursor:pointer">One per player (unique)</label>
+          </div>
+          <button class="bsm give" style="padding:9px;font-size:.88rem" onclick="dpCreateItem()">✅ Create Item</button>
+        </div>
+        <div style="margin-top:12px">
+          <div class="msec-ttl dp" style="font-size:.9rem;margin-bottom:8px">📋 Shop Items</div>
+          <div id="dp-items-list"></div>
+        </div>
       </div>
       <div class="msec" style="margin-top:18px"><div class="msec-ttl dp">🚩 Reports</div><div id="dp-reports"><div class="empty">Loading…</div></div></div>
       <div class="msec" style="margin-top:18px"><div class="msec-ttl dp">💬 Remove Messages</div><div id="dp-chat"></div></div>
@@ -1032,6 +1108,16 @@
 
     <button class="mbtnclose" onclick="closeTeamManage()">Close</button>
   </div>
+
+<!-- Cheat Warning Overlay -->
+<div id="cheat-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#000;align-items:center;justify-content:center;text-align:center;padding:20px;font-family:'Bebas Neue',cursive;animation:cheatShake .15s infinite">
+  <div class="cheat-inner">
+    <div class="cheat-skull">💀</div>
+    <div class="cheat-msg">BUDDY STOP CHEATING UR COOKED!!!</div>
+    <div class="cheat-sub">Your coins have been rolled back. We're watching.</div>
+    <button class="cheat-dismiss" onclick="document.getElementById('cheat-overlay').style.display='none'">I'm Sorry</button>
+  </div>
+</div>
 </div>
 
 <script src="script.js"></script>

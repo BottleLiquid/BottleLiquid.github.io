@@ -284,6 +284,366 @@ function calcStreak(acc){
   return {streak:1,lastLoginDate:today};
 }
 
+// ── FEUDALISM SYSTEM ───────────────────────────────────
+let FS = { king: 'Default_Triangle', treasury: 0, revoltVotes: [], activeBuff: null, totalPower: 0, currentRevoltPower: 0, jailList: [], nobleThreshold: 1000000, knightThreshold: 100000 };
+const NOBLE_VOTE_WEIGHT = 5;
+const SERF_VOTE_WEIGHT = 1;
+const RANK_COLORS = { 'King': '#ff00ff', 'Noble': '#00aaff', 'Knight': '#c0c0c0', 'Serf': '#8b4513' };
+
+function getFeudalRank(user) {
+  if (!user) return 'Commoner';
+  if (user.username === FS.king) return 'King';
+  if (user.manualRank) return user.manualRank;
+  const c = (user.coins || 0) + (user.taxDebt || 0);
+  if (c >= (FS.nobleThreshold || 1000000)) return 'Noble';
+  if (c >= (FS.knightThreshold || 100000)) return 'Knight';
+  return 'Serf';
+}
+
+async function loadFeudalGlobal() {
+  if (!FB_READY) return;
+  const doc = await db.collection('settings').doc('feudalism').get();
+  if (doc.exists) { FS = { ...FS, ...doc.data() }; }
+  else { await db.collection('settings').doc('feudalism').set(FS); }
+
+  const allUsers = await dbAllUsers();
+  let totalPossiblePower = 0;
+  let currentPower = 0;
+  
+  allUsers.forEach(u => {
+    const rank = getFeudalRank(u);
+    if (rank === 'Noble') totalPossiblePower += NOBLE_VOTE_WEIGHT;
+    if (rank === 'Serf') totalPossiblePower += SERF_VOTE_WEIGHT;
+    if (FS.revoltVotes && FS.revoltVotes.includes(u.username)) {
+      currentPower += (rank === 'Noble' ? NOBLE_VOTE_WEIGHT : SERF_VOTE_WEIGHT);
+    }
+  });
+  FS.totalPower = totalPossiblePower;
+  FS.currentRevoltPower = currentPower;
+  updateKingdomUI();
+}
+
+async function processTax(amount) {
+  if (!FB_READY || amount <= 0) return;
+  const tax = Math.ceil(amount * 0.05); // 5% tax rate
+  const currentDebt = UC.taxDebt || 0;
+  UC.taxDebt = currentDebt + tax;
+  await dbUpdateUser(getU(), { taxDebt: UC.taxDebt });
+  
+  // If debt is high, 15% chance to go to jail on every race win
+  if (UC.taxDebt > 200 && Math.random() < 0.15) {
+    arrestUser(getU(), 10); // 10 minute sentence
+  }
+}
+
+function getActiveBuffMult() {
+  if (!FS.activeBuff || !FS.activeBuff.until || Date.now() > FS.activeBuff.until) return 1;
+  return FS.activeBuff.mult || 1;
+}
+
+function updateKingdomUI() {
+  const el = document.getElementById('kingdom-info');
+  if (!el) return;
+  const thresh = Math.ceil(FS.totalPower * 0.8);
+  const pct = thresh > 0 ? Math.min(100, Math.round((FS.currentRevoltPower / thresh) * 100)) : 0;
+  el.innerHTML = `King: <span style="color:${RANK_COLORS['King']}">${FS.king || 'Election'}</span> | Treasury: 💧${FS.treasury}<br>Revolt: <span style="color:${pct >= 100 ? 'var(--ok)' : 'var(--bad)'}">${pct}%</span> toward 80% threshold`;
+  const kb = document.getElementById('king-manage-btn');
+  if (kb) kb.style.display = (getU() === FS.king) ? 'block' : 'none';
+  const eb = document.getElementById('election-btn');
+  if (eb) eb.style.display = (FS.electionOpen) ? 'block' : 'none';
+}
+
+async function arrestUser(username, mins) {
+  const jailUntil = Date.now() + (mins * 60 * 1000);
+  await dbUpdateUser(username, { jailUntil });
+  if (username === getU()) {
+    UC.jailUntil = jailUntil;
+    showToast(`🚨 ARRESTED! You are in jail for ${mins}m for tax evasion.`);
+  }
+  await logRoyalAction(`${username} was thrown in jail for ${mins} minutes.`);
+}
+
+async function payTaxes() {
+  const debt = UC.taxDebt || 0;
+  if (debt <= 0) { showToast("You have no tax debt!"); return; }
+  if ((UC.coins || 0) < debt) { showToast("Not enough coins to pay full taxes!"); return; }
+
+  UC.coins -= debt;
+  UC.taxDebt = 0;
+  await dbUpdateUser(getU(), { coins: UC.coins, taxDebt: 0 });
+  await db.collection('settings').doc('feudalism').update({ 
+    treasury: firebase.firestore.FieldValue.increment(debt) 
+  });
+  
+  refreshCoins();
+  renderSocietyTab();
+  showToast("Taxes paid! The Kingdom thanks you.");
+}
+
+async function renderSocietyTab() {
+  const all = await dbAllUsers();
+  const hierarchy = { King: [], Noble: [], Knight: [], Serf: [] };
+  const jailed = [];
+
+  all.forEach(u => {
+    const r = getFeudalRank(u);
+    if (hierarchy[r]) hierarchy[r].push(u);
+    if (u.jailUntil > Date.now()) jailed.push(u);
+  });
+
+  const container = document.getElementById('society-content');
+  if (!container) return;
+
+  const isKing = getU() === FS.king;
+  const kingSettings = isKing ? `
+    <div class="card-panel" style="border-color:#ffd700; background:rgba(255,215,0,.03)">
+      <div class="h-card-title" style="color:#ffd700">📜 Royal Decrees</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div class="field" style="margin-bottom:0"><label style="color:#ffd700;opacity:.8">Noble Requirement (💧)</label><input id="soc-noble-thresh" type="number" value="${FS.nobleThreshold||1000000}" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,215,0,.2)"></div>
+        <div class="field" style="margin-bottom:0"><label style="color:#ffd700;opacity:.8">Knight Requirement (💧)</label><input id="soc-knight-thresh" type="number" value="${FS.knightThreshold||100000}" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,215,0,.2)"></div>
+        <button class="rbtn" onclick="saveThresholdsFromSociety()" style="width:100%;background:#4a3200;border:1px solid #ffd700;color:#ffd700;margin-top:5px">Update Requirements</button>
+      </div>
+    </div>` : '';
+
+  const hierarchyHtml = Object.entries(hierarchy).map(([rank, users]) => {
+    const color = RANK_COLORS[rank];
+    const icon = rank === 'King' ? '👑' : rank === 'Noble' ? '💎' : rank === 'Knight' ? '⚔️' : '📜';
+    return `
+      <div class="hier-tier tier-${rank.toLowerCase()}">
+        <div class="tier-header" style="border-bottom-color:${color}">
+          <span class="tier-icon">${icon}</span>
+          <span class="tier-name" style="color:${color}">${rank}</span>
+          <span class="tier-count">${users.length}</span>
+        </div>
+        <div class="tier-users">
+          ${users.map(u => `<div class="hier-user" onclick="openProfile('${esca(u.username)}')">${esc(u.username)}</div>`).join('') || '<div class="empty-tier">None</div>'}
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="soc-grid">
+      ${kingSettings}
+      <div class="card-panel hier-main-card">
+        <div class="h-card-title">🏰 Kingdom Hierarchy</div>
+        <div class="hier-visual-list">
+          ${hierarchyHtml}
+        </div>
+      </div>
+
+      <div class="card-panel">
+        <div class="h-card-title">💰 Royal Treasury</div>
+        <div style="text-align:center; padding: 15px;">
+          <div style="font-size:2.5rem; color:#ffd700">💧 ${FS.treasury}</div>
+          <div style="color:var(--muted); margin-bottom:15px;">Your Unpaid Tax Debt: <span style="color:#ff4444">${UC.taxDebt || 0}</span></div>
+          <button class="rbtn" onclick="payTaxes()" style="width:100%">Pay Tax Debt</button>
+          <button class="h-btn-small" style="margin-top:10px; width:100%" onclick="openRoyalLedger()">View Public Ledger</button>
+        </div>
+      </div>
+
+      <div class="card-panel" style="border-color:#ff4444">
+        <div class="h-card-title" style="color:#ff4444">⚖️ The Dungeon</div>
+        <div class="jail-list">
+          ${jailed.map(u => `
+            <div class="jail-row">
+              <span>${u.username}</span>
+              ${getU() === FS.king ? `<button class="bsm give" onclick="pardonUser('${u.username}')">Pardon</button>` : `<small>${Math.round((u.jailUntil - Date.now()) / 60000)}m left</small>`}
+            </div>
+          `).join('') || '<div class="empty">The dungeon is empty.</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function saveThresholdsFromSociety() {
+  const nt = parseInt(document.getElementById('soc-noble-thresh').value);
+  const kt = parseInt(document.getElementById('soc-knight-thresh').value);
+  if (isNaN(nt) || isNaN(kt)) return;
+  await db.collection('settings').doc('feudalism').update({ nobleThreshold: nt, knightThreshold: kt });
+  showToast("Kingdom requirements updated!");
+  loadFeudalGlobal().then(() => renderSocietyTab());
+}
+
+async function appointRankFromProfile(username) {
+  const rank = document.getElementById('prof-appoint-rank').value;
+  await dbUpdateUser(username, { manualRank: rank === 'Clear' ? null : rank });
+  showToast(`${username}'s rank updated to ${rank}!`);
+  await logRoyalAction(`The King appointed ${username} as ${rank}.`);
+  closeProfile();
+}
+
+async function pardonUser(username) {
+  if (getU() !== FS.king) return;
+  await dbUpdateUser(username, { jailUntil: 0 });
+  await logRoyalAction(`King pardoned ${username} from the dungeon.`);
+  showToast(`Pardoned ${username}.`);
+  renderSocietyTab();
+}
+
+function checkJail() {
+  if (UC && UC.jailUntil > Date.now()) {
+    const remaining = Math.round((UC.jailUntil - Date.now()) / 60000);
+    showToast(`🚫 You are in JAIL! ${remaining}m remaining.`);
+    return true;
+  }
+  return false;
+}
+
+async function sendSlaveryRequest() {
+  if (!profileTarget || !UC || !FB_READY) return;
+  const myRank = getFeudalRank(UC);
+  if (myRank === 'Serf') { showToast("Serfs cannot own slaves!"); return; }
+  await db.collection('slavery_requests').add({ from: UC.username, to: profileTarget, ts: Date.now(), status: 'pending' });
+  showToast(`Slavery request sent to ${profileTarget}!`);
+}
+
+async function checkFeudalStatus() {
+  if (!UC || !FB_READY) return;
+  await loadFeudalGlobal();
+  const snap = await db.collection('slavery_requests').where('to', '==', getU()).where('status', '==', 'pending').get();
+  snap.forEach(async (doc) => {
+    const req = doc.data();
+    if (confirm(`${req.from} wants to enslave you. You get 50 bottlecaps a week for labor. Accept?`)) {
+      await db.collection('slavery_requests').doc(doc.id).update({ status: 'accepted' });
+      await dbUpdateUser(getU(), { master: req.from, lastSlaveReward: Date.now() });
+      showToast(`You are now a serf for ${req.from}.`);
+    } else { await db.collection('slavery_requests').doc(doc.id).update({ status: 'rejected' }); }
+  });
+  if (UC.master) {
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+    if (Date.now() - (UC.lastSlaveReward || 0) > oneWeek) openSlaveryMinigame();
+  }
+}
+
+function openSlaveryMinigame() {
+  const overlay = document.createElement('div');
+  overlay.id = 'slave-minigame';
+  overlay.className = 'moverlay on';
+  overlay.innerHTML = `<div class="modal"><div class="mttl">WEEKLY LABOR</div><div class="msub">Your master demands tribute. Mine 50 💧.</div><div style="text-align:center;padding:20px;"><button class="rbtn" id="work-btn" onclick="doSlaveWork()">⛏️ MINE (0/10)</button></div></div>`;
+  document.body.appendChild(overlay);
+  window._workCount = 0;
+}
+
+async function doSlaveWork() {
+  window._workCount++;
+  const btn = document.getElementById('work-btn');
+  btn.textContent = `⛏️ MINE (${window._workCount}/10)`;
+  if (window._workCount >= 10) {
+    UC.coins = (UC.coins || 0) + 50;
+    await processTax(50);
+    await dbUpdateUser(getU(), { coins: UC.coins, lastSlaveReward: Date.now() });
+    refreshCoins();
+    document.getElementById('slave-minigame').remove();
+    showToast("Work finished! You earned 50 💧.");
+  }
+}
+
+async function openKingdomManager() {
+  if (getU() !== FS.king) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'kingdom-modal';
+  overlay.className = 'moverlay on';
+  overlay.innerHTML = `<div class="modal"><div class="mttl">👑 ROYAL MANAGEMENT</div><div class="msub">Treasury: 💧${FS.treasury}</div>
+    <div class="h-action-buttons">
+    <button class="rbtn" style="background:#443300" onclick="buyRoyalBuff('Banquet', 1.2, 5000, 3600000)">Banquet (1.2x | 5k)</button>
+    <button class="rbtn" style="background:#664400" onclick="buyRoyalBuff('Golden Era', 1.5, 15000, 3600000)">Golden Era (1.5x | 15k)</button>
+    <div style="border:1px solid #ffd700;padding:10px;border-radius:8px;margin-top:10px">
+      <div style="font-size:.8rem;color:#ffd700;margin-bottom:5px">RANK THRESHOLDS</div>
+      <div style="display:flex;gap:5px;align-items:center;margin-bottom:5px"><small>Noble:</small><input id="noble-thresh" type="number" value="${FS.nobleThreshold||1000000}" style="width:100px;background:#000;border:1px solid #444;color:#fff;padding:2px"></div>
+      <div style="display:flex;gap:5px;align-items:center"><small>Knight:</small><input id="knight-thresh" type="number" value="${FS.knightThreshold||100000}" style="width:100px;background:#000;border:1px solid #444;color:#fff;padding:2px"></div>
+      <button class="bsm give" style="width:100%;margin-top:5px" onclick="updateRankThresholds()">Set Thresholds</button>
+    </div>
+    <div style="border:1px solid #00aaff;padding:10px;border-radius:8px;margin-top:10px">
+      <div style="font-size:.8rem;color:#00aaff;margin-bottom:5px">APPOINT RANK</div>
+      <input id="appoint-user" type="text" placeholder="Username" style="width:100%;background:#000;border:1px solid #444;color:#fff;padding:5px;margin-bottom:5px">
+      <select id="appoint-rank" style="width:100%;background:#000;border:1px solid #444;color:#fff;padding:5px;margin-bottom:5px">
+        <option value="Clear">Clear (Automatic)</option><option value="Noble">Noble</option><option value="Knight">Knight</option><option value="Serf">Serf</option>
+      </select>
+      <button class="bsm give" style="width:100%" onclick="appointRank()">Appoint</button>
+    </div>
+    <div style="border:1px solid #ff4444;padding:10px;border-radius:8px;margin-top:10px">
+      <div style="font-size:.8rem;color:#ff4444">EMBEZZLE FUNDS</div>
+      <input id="emb-amt" type="number" placeholder="Amt" style="width:70px;background:#000;border:1px solid #444;color:#fff;margin:5px">
+      <button class="bsm rm" onclick="embezzleTreasury()">Pocket Cash</button>
+    </div></div><button class="mbtnclose" onclick="document.getElementById('kingdom-modal').remove()">Close</button></div>`;
+  document.body.appendChild(overlay);
+}
+
+async function updateRankThresholds() {
+  const nt = parseInt(document.getElementById('noble-thresh').value);
+  const kt = parseInt(document.getElementById('knight-thresh').value);
+  if (isNaN(nt) || isNaN(kt)) return;
+  await db.collection('settings').doc('feudalism').update({ nobleThreshold: nt, knightThreshold: kt });
+  showToast("Royal thresholds updated!");
+  loadFeudalGlobal();
+}
+
+async function appointRank() {
+  const user = document.getElementById('appoint-user').value.trim();
+  const rank = document.getElementById('appoint-rank').value;
+  if (!user) return;
+  const acc = await dbGetUser(user);
+  if (!acc) { showToast("User not found!"); return; }
+  await dbUpdateUser(user, { manualRank: rank === 'Clear' ? null : rank });
+  showToast(`${user} rank updated to ${rank}!`);
+  await logRoyalAction(`The King appointed ${user} as ${rank}.`);
+}
+
+async function embezzleTreasury() {
+  const amt = parseInt(document.getElementById('emb-amt').value);
+  if (!amt || amt <= 0 || amt > FS.treasury * 0.1) { showToast("Invalid amount (max 10%)"); return; }
+  await db.collection('settings').doc('feudalism').update({ treasury: firebase.firestore.FieldValue.increment(-amt) });
+  UC.coins = (UC.coins || 0) + amt;
+  await dbUpdateUser(getU(), { coins: UC.coins });
+  await logRoyalAction(`The King pocketed 💧${amt} for personal use.`);
+  document.getElementById('kingdom-modal').remove();
+  loadFeudalGlobal(); refreshCoins();
+}
+
+async function buyRoyalBuff(name, mult, cost, dur) {
+  if (FS.treasury < cost) { showToast("Treasury too low!"); return; }
+  await db.collection('settings').doc('feudalism').update({ treasury: firebase.firestore.FieldValue.increment(-cost), activeBuff: { name, mult, until: Date.now() + dur } });
+  await logRoyalAction(`The King activated ${name} for the realm.`);
+  document.getElementById('kingdom-modal').remove();
+  loadFeudalGlobal();
+}
+
+async function logRoyalAction(text) {
+  if (FB_READY) await db.collection('royal_logs').add({ msg: text, ts: Date.now() });
+}
+
+async function openRoyalLedger() {
+  const snap = await db.collection('royal_logs').orderBy('ts', 'desc').limit(15).get();
+  alert("📜 ROYAL LEDGER:\n\n" + snap.docs.map(d => `[${new Date(d.data().ts).toLocaleTimeString()}] ${d.data().msg}`).join('\n'));
+}
+
+async function castRevoltVote() {
+  if (!UC || !FB_READY || FS.revoltVotes.includes(getU())) return;
+  const rank = getFeudalRank(UC);
+  if (rank !== 'Serf' && rank !== 'Noble') { showToast("Only Serfs and Nobles can revolt!"); return; }
+  const newVotes = [...FS.revoltVotes, getU()];
+  await db.collection('settings').doc('feudalism').update({ revoltVotes: newVotes });
+  await loadFeudalGlobal();
+  if (FS.currentRevoltPower >= Math.ceil(FS.totalPower * 0.8)) {
+    await db.collection('settings').doc('feudalism').update({ king: null, revoltVotes: [], electionOpen: true });
+    await logRoyalAction("THE REVOLUTION SUCCEEDED! The King has been deposed.");
+    showToast("THE KING HAS BEEN DEPOSED!");
+  }
+}
+
+async function openElectionModal() {
+  const snap = await dbAllUsers();
+  const cands = snap.sort((a,b) => (b.coins||0)-(a.coins||0)).slice(0, 5);
+  const name = prompt("Enter username to vote for from top 5:\n" + cands.map(c=>c.username).join(', '));
+  if (name && cands.find(c => c.username === name)) {
+    await db.collection('settings').doc('feudalism').update({ king: name, electionOpen: false });
+    await logRoyalAction(`A new King has been crowned: ${name}`);
+    showToast(`Long live King ${name}!`);
+    loadFeudalGlobal();
+  }
+}
+
 // ── AUTH ───────────────────────────────────────────────
 function switchAuth(tab) {
   document.getElementById('tab-li').classList.toggle('on',tab==='login');
@@ -334,7 +694,7 @@ function enterApp() {
   document.getElementById('nav-user').textContent=UC.username;
   refreshCoins(); applyTheme(UC.activeTheme||'default',UC.gradientColors||null); updateCoinSnapshot(); scheduleSnapshotLoop(); deleteOldMessages();
   goTab('home');
-  renderShop(); startChatListener(); renderLB(); startDMListener(); loadBannedWords(); syncActiveAbilities(); checkTrollNotif(); applyActiveTrollEffects(); startTrollEffectWatcher();
+  renderShop(); startChatListener(); renderLB(); startDMListener(); loadBannedWords(); syncActiveAbilities(); checkTrollNotif(); applyActiveTrollEffects(); startTrollEffectWatcher(); checkFeudalStatus();
   loadDPThemesIntoShop().then(()=>{if(UC&&UC.activeTheme&&UC.activeTheme.startsWith("dp_"))applyDPTheme(UC.activeTheme);});
   if(UC.activeMods&&UC.activeMods.length){activeMods=new Set(UC.activeMods);applyAllMods();}
   setTimeout(async()=>{await checkAndGrantSecretThemes(0);await checkBadges({streak:UC.streak||1});},1500);
@@ -344,10 +704,11 @@ function enterApp() {
 
 // ── NAV ────────────────────────────────────────────────
 function goTab(id) {
-  document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('on',['home','race','teams','items','inventory','shop','chat','lb','dm'][i]===id));
+  document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('on',['home','race','teams','items','inventory','shop','chat','lb','dm','society'][i]===id));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.getElementById('tab-'+id).classList.add('on');
   if(id==='home') renderHome();
+  if(id==='society') renderSocietyTab();
   if(id==='teams') renderTeamsTab();
   if(id==='items') renderItemsShop();
   if(id==='inventory') renderInventory();
@@ -524,7 +885,8 @@ async function soloFinished() {
   const wpm=Math.round(RS.prompt.trim().split(/\s+/).length/(elapsed/60000));
   const acc=Math.max(0,Math.round(((RS.prompt.length-RS.errors)/RS.prompt.length)*100));
   const rewards = RS.raceType === 'depoule' ? REWARDS_DEPOULE : REWARDS_NORMAL;
-  const baseCoins=rewards[Math.min(place-1,3)];
+  let baseCoins=rewards[Math.min(place-1,3)];
+  baseCoins *= getActiveBuffMult();
   let coins=Math.round(baseCoins * (acc / 100));
   
   // Apply team bonuses
@@ -536,10 +898,11 @@ async function soloFinished() {
     coins += bonusCoins;
   }
   
-  if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins();}
+  if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins(); await processTax(coins);}
   await checkAndGrantSecretThemes(wpm);
   await checkBadges({wpm,place,isLive:false,firstRace:!(UC.badges||[]).includes('first_race')});
   if(place===1&&window._modConfettiWin)confettiBlast('#ffd700');
+  loadFeudalGlobal();
   showResult(place,coins,wpm,acc,elapsed);
 }
 
@@ -755,7 +1118,8 @@ async function liveFinished(opponentWon=false) {
   const acc=Math.max(0,Math.round(((RS.prompt.length-RS.errors)/RS.prompt.length)*100));
   try { await db.collection('lobbies').doc(liveRS.lobbyId).update({[myRole+'Done']:true,[myRole+'Time']:RS.endTime}); } catch(e){}
   const place=opponentWon?2:1;
-  const baseCoins=place===1?75:20;
+  let baseCoins=place===1?75:20;
+  baseCoins *= getActiveBuffMult();
   let coins=Math.round(baseCoins * (acc / 100));
   
   // Apply team bonuses
@@ -767,10 +1131,11 @@ async function liveFinished(opponentWon=false) {
     coins += bonusCoins;
   }
   
-  if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins();}
+  if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins(); await processTax(coins);}
   await checkAndGrantSecretThemes(wpm);
   await checkBadges({wpm,place,isLive:true});
   showResult(place,coins,wpm,acc,elapsed);
+  loadFeudalGlobal();
   setTimeout(()=>{ try{db.collection('lobbies').doc(liveRS.lobbyId).update({status:'done'});}catch(e){} },500);
   liveRSreset();
 }
@@ -1565,10 +1930,12 @@ async function openProfile(username){
   const streak=acc.streak||1;
   const themes=acc.themes||['default'];
 
+  const feudalRank = getFeudalRank(acc);
+
   document.getElementById('prof-avatar').textContent=username.charAt(0).toUpperCase();
   document.getElementById('prof-name').textContent=acc.username;
   const badgeEl=document.getElementById('prof-badge');
-  badgeEl.textContent=badge.label;
+  badgeEl.textContent = `${badge.label} • ${feudalRank}`;
   badgeEl.style.background=badge.color;
   badgeEl.style.border=`1px solid ${badge.border}`;
   badgeEl.style.color='var(--text)';
@@ -1612,6 +1979,18 @@ async function openProfile(username){
       <button onclick="openDMWith('${esca(acc.username)}')" style="width:100%;margin-top:10px;padding:10px;border:none;border-radius:8px;background:linear-gradient(135deg,#003366,#0055aa);color:#fff;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:1px;cursor:pointer;">✉ Message</button>
       <button onclick="openReportModal('${esca(acc.username)}')" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:rgba(200,0,0,.15);border:1px solid rgba(200,0,0,.3);color:#ff6666;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:1px;cursor:pointer;">🚩 Report</button>
       <button onclick="openTrollModal('${esca(acc.username)}')" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.3);color:#ffaa44;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:1px;cursor:pointer;">🎭 Troll</button>
+      ${(getU() === FS.king && !isSelf) ? `
+        <div style="border:1px solid #00aaff;padding:12px;border-radius:10px;margin-top:10px;background:rgba(0,170,255,.05)">
+          <div style="font-family:'Bebas Neue',cursive;font-size:1rem;color:#00aaff;margin-bottom:8px;letter-spacing:1px">👑 Royal Appointment</div>
+          <select id="prof-appoint-rank" style="width:100%;background:#000;border:1px solid #444;color:#fff;padding:8px;border-radius:6px;margin-bottom:8px;font-family:'Rajdhani',sans-serif">
+            <option value="Clear">Automatic (Default)</option><option value="Noble">Noble</option><option value="Knight">Knight</option><option value="Serf">Serf</option>
+          </select>
+          <button class="bsm give" style="width:100%;padding:8px" onclick="appointRankFromProfile('${esca(username)}')">Update Rank</button>
+        </div>` : ''}
+      ${(feudalRank === 'Serf' && !acc.master && getU() !== FS.king) ? `<button onclick="sendSlaveryRequest()" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:rgba(139,69,19,.2);border:1px solid #8b4513;color:#d2b48c;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:1px;cursor:pointer;">📜 Request Serfdom</button>` : ''}
+      ${(feudalRank === 'King' && getU() !== FS.king) ? 
+        `<button onclick="castRevoltVote()" style="width:100%;margin-top:8px;padding:10px;border:none;border-radius:8px;background:#300;border:1px solid #f00;color:#f44;font-weight:700;cursor:pointer;">⚔ REVOLT</button>` 
+        : ''}
     `;
   }
 }
@@ -4544,23 +4923,6 @@ async function disbandTeam() {
   renderTeamsTab();
 }
 
-function openCasino() {
-  const ov = document.getElementById('casino-overlay');
-  const frame = document.getElementById('casino-frame');
-  if (ov && frame) {
-    frame.src = '/gamble/index.html';
-    ov.style.display = 'block';
-  }
-}
-function closeCasino() {
-  const ov = document.getElementById('casino-overlay');
-  const frame = document.getElementById('casino-frame');
-  if (ov && frame) {
-    ov.style.display = 'none';
-    frame.src = ''; // Stop sounds/scripts from the casino when closed
-  }
-}
-
 async function init() {
   const setStatus = (msg) => { const el = document.getElementById('ld-status'); if(el) el.textContent = msg; };
   
@@ -4589,17 +4951,4 @@ async function init() {
   
   showWelcomeScreen();
 }
-
-// Global listeners for non-button exits
-window.addEventListener('popstate', () => {
-  if (document.getElementById('casino-overlay')?.style.display === 'block') {
-    closeCasino(true);
-  }
-});
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && document.getElementById('casino-overlay')?.style.display === 'block') {
-    closeCasino();
-  }
-});
-
 init();
