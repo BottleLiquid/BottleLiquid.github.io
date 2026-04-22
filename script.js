@@ -285,7 +285,7 @@ function calcStreak(acc){
 }
 
 // ── FEUDALISM SYSTEM ───────────────────────────────────
-let FS = { king: 'Default_Triangle', treasury: 0, revoltVotes: [], activeBuff: null, totalPower: 0, currentRevoltPower: 0, jailList: [], nobleThreshold: 1000000, knightThreshold: 100000 };
+let FS = { king: 'Control', treasury: 0, revoltVotes: [], activeBuff: null, totalPower: 0, currentRevoltPower: 0, jailList: [], nobleThreshold: 1000000, knightThreshold: 100000 };
 const NOBLE_VOTE_WEIGHT = 5;
 const SERF_VOTE_WEIGHT = 1;
 const RANK_COLORS = { 'King': '#ff00ff', 'Noble': '#00aaff', 'Knight': '#c0c0c0', 'Serf': '#8b4513' };
@@ -395,6 +395,29 @@ async function renderSocietyTab() {
   if (!container) return;
 
   const isKing = getU() === FS.king;
+
+  let petitionsHtml = '';
+  if (isKing && FB_READY) {
+    const pSnap = await db.collection('royal_petitions').orderBy('ts', 'desc').get();
+    const petitions = pSnap.docs.map(d => ({id: d.id, ...d.data()}));
+    petitionsHtml = `
+      <div class="card-panel" style="grid-column: 1 / -1; border-color: #ffd700; background:rgba(255,215,0,.02)">
+        <div class="h-card-title" style="color:#ffd700">📜 Royal Petitions (${petitions.length})</div>
+        <div class="petition-list">
+          ${petitions.map(p => `
+            <div class="petition-row" style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.05); border-radius:8px; margin-bottom:8px;">
+              <div style="flex:1">
+                <div style="font-weight:700; color:var(--accent2); font-size:.95rem; cursor:pointer" onclick="openProfile('${esca(p.from)}')">${esc(p.from)}</div>
+                <div style="font-size:.9rem; margin:4px 0">${esc(p.text)}</div>
+                <div style="font-size:.7rem; color:var(--muted)">${new Date(p.ts).toLocaleString()}</div>
+              </div>
+              <button class="bsm give" style="background:rgba(0,255,0,.1); border-color:rgba(0,255,0,.3)" onclick="resolvePetition('${esca(p.id)}')">Resolve</button>
+            </div>
+          `).join('') || '<div class="empty">The throne room is quiet. No petitions today.</div>'}
+        </div>
+      </div>`;
+  }
+
   const kingSettings = isKing ? `
     <div class="card-panel" style="border-color:#ffd700; background:rgba(255,215,0,.03)">
       <div class="h-card-title" style="color:#ffd700">📜 Royal Decrees</div>
@@ -423,6 +446,13 @@ async function renderSocietyTab() {
 
   container.innerHTML = `
     <div class="soc-grid">
+      ${petitionsHtml}
+      ${(!isKing) ? `
+        <div class="card-panel" style="text-align:center; border-color:#ffd700">
+          <div class="h-card-title">📜 Petition the Crown</div>
+          <p style="font-size:.85rem; color:var(--muted); margin-bottom:15px">Have a request or grievance for his Majesty?</p>
+          <button class="rbtn" onclick="sendKingPetition()" style="width:100%; background:#4a3200; border:1px solid #ffd700; color:#ffd700">Send Petition</button>
+        </div>` : ''}
       ${kingSettings}
       <div class="card-panel hier-main-card">
         <div class="h-card-title">🏰 Kingdom Hierarchy</div>
@@ -454,6 +484,26 @@ async function renderSocietyTab() {
       </div>
     </div>
   `;
+}
+
+async function sendKingPetition() {
+  if (!UC || !FB_READY) return;
+  const msg = prompt("What is your petition for the King?");
+  if (!msg || !msg.trim()) return;
+  if (msg.length > 280) { showToast("Petition too long! (Max 280 chars)"); return; }
+
+  await db.collection('royal_petitions').add({
+    from: UC.username,
+    text: msg.trim(),
+    ts: Date.now()
+  });
+  showToast("Your petition has been delivered to the King.");
+}
+
+async function resolvePetition(id) {
+  if (getU() !== FS.king || !FB_READY) return;
+  await db.collection('royal_petitions').doc(id).delete();
+  renderSocietyTab();
 }
 
 async function saveThresholdsFromSociety() {
