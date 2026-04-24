@@ -1285,3 +1285,171 @@ body.theme-corruption{animation:corruptionGlitch .4s steps(1) infinite}
     background: linear-gradient(to bottom, #1a0f00, #000);
 }
 #work-btn { background: #5d2e0a; color: #d2b48c; border: 1px solid #8b4513; }
+
+/* ── PLASMA & REBIRTH ─────────────────────────────────────────────────────── */
+.plasma-display {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: linear-gradient(135deg, rgba(102,0,204,.25), rgba(170,68,255,.15));
+  border: 1px solid rgba(170,68,255,.4);
+  border-radius: 20px;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  color: #cc88ff;
+  white-space: nowrap;
+  box-shadow: 0 0 8px rgba(170,68,255,.3);
+  animation: plasmaPulse 2.5s ease-in-out infinite;
+}
+@keyframes plasmaPulse {
+  0%,100% { box-shadow: 0 0 8px rgba(170,68,255,.3); }
+  50%      { box-shadow: 0 0 16px rgba(170,68,255,.6), 0 0 4px rgba(170,68,255,.4) inset; }
+}
+.rebirth-btn {
+  background: linear-gradient(135deg, #2a0066, #5500aa) !important;
+  border-color: #aa44ff !important;
+  color: #dd99ff !important;
+}
+.rebirth-btn:hover {
+  background: linear-gradient(135deg, #3d0099, #7700cc) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(170,68,255,.5) !important;
+}
+
+/* ── PLASMA SHOP ─────────────────────────────────────────────────────────── */
+.plasma-shop-btn {
+  background: linear-gradient(135deg, #2a0066, #5500aa) !important;
+  border-color: #aa44ff !important;
+  color: #dd99ff !important;
+  font-weight: 700;
+}
+.plasma-shop-btn:hover {
+  background: linear-gradient(135deg, #3d0099, #7700cc) !important;
+  color: #fff !important;
+  box-shadow: 0 0 14px rgba(170,68,255,.55) !important;
+}
+.plasma-shop-modal { border-color: rgba(170,68,255,.4) !important; }
+
+/* Plasma Shop tab buttons */
+.ps-tab {
+  padding: 7px 18px;
+  border: 1px solid rgba(170,68,255,.3);
+  border-radius: 6px;
+  background: rgba(102,0,204,.1);
+  color: #aa88cc;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .2s;
+}
+.ps-tab:hover { border-color: #aa44ff; color: #fff; }
+.ps-tab.on {
+  background: rgba(102,0,204,.35);
+  border-color: #aa44ff;
+  color: #fff;
+  box-shadow: 0 0 8px rgba(170,68,255,.3);
+}
+
+/* Card grid */
+.ps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+  padding: 4px 0;
+}
+.ps-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(170,68,255,.2);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: .2s;
+}
+.ps-card:hover { border-color: rgba(170,68,255,.5); background: rgba(102,0,204,.1); }
+.ps-card-owned {
+  border-color: rgba(0,230,118,.35) !important;
+  background: rgba(0,230,118,.04) !important;
+  opacity: .85;
+}
+.ps-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.ps-card-icon { font-size: 2.2rem; line-height: 1; }
+.ps-card-rarity { font-size: .7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.ps-card-name { font-family: 'Bebas Neue', cursive; font-size: 1.15rem; letter-spacing: 1px; color: #fff; }
+.ps-card-desc { font-size: .8rem; color: var(--muted); line-height: 1.5; flex: 1; }
+.ps-owned-qty { font-size: .8rem; color: #aa44ff; font-weight: 700; }
+.ps-owned-badge { font-size: .8rem; color: #00e676; font-weight: 700; }
+.ps-buy-btn {
+  padding: 8px;
+  border: 1px solid rgba(170,68,255,.5);
+  border-radius: 7px;
+  background: rgba(102,0,204,.25);
+  color: #cc88ff;
+  font-family: 'Bebas Neue', cursive;
+  font-size: .95rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: .2s;
+  margin-top: auto;
+}
+.ps-buy-btn:hover:not(:disabled) {
+  background: rgba(102,0,204,.5);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(170,68,255,.4);
+}
+.ps-buy-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Owned list rows */
+.ps-owned-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.ps-owned-icon { font-size: 1.8rem; flex-shrink: 0; }
+.ps-owned-info { flex: 1; }
+.ps-owned-name { font-family: 'Bebas Neue', cursive; font-size: 1rem; letter-spacing: 1px; color: #fff; }
+.ps-owned-desc { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.ps-use-btn {
+  padding: 8px 16px;
+  border: 1px solid rgba(170,68,255,.6);
+  border-radius: 7px;
+  background: rgba(102,0,204,.3);
+  color: #dd99ff;
+  font-family: 'Bebas Neue', cursive;
+  font-size: .95rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: .2s;
+}
+.ps-use-btn:hover {
+  background: rgba(102,0,204,.6);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(170,68,255,.5);
+}
+
+/* Plasma inventory card badge */
+.plasma-inv-card { border-color: rgba(170,68,255,.35) !important; }
+.inv-plasma-badge {
+  font-size: .65rem;
+  letter-spacing: 2px;
+  color: #aa44ff;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(102,0,204,.15);
+  border: 1px solid rgba(170,68,255,.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  display: inline-block;
+  width: fit-content;
+}
+.item-rarity { font-size: .72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }

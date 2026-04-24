@@ -1,0 +1,58 @@
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>js-dos api</title>
+    <style type="text/css">
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #000;
+        overflow: hidden;
+      }
+      #dosbox { width: 100%; height: 100%; }
+      #dosbox canvas {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+      .back-button {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        padding: 8px 15px;
+        background-color: rgba(200, 0, 0, 0.8);
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-family: sans-serif;
+        font-size: 0.9em;
+        z-index: 1000;
+        transition: background-color 0.2s;
+      }
+      .back-button:hover {
+        background-color: rgba(255, 0, 0, 0.9);
+      }
+      .dosbox-container > .dosbox-overlay { background: url(thumbnail.png); }
+    </style>
+  </head>
+  <body>
+    <div id="dosbox"></div>
+    <a href="/gamble/index.html" class="back-button">← Back to Casino</a>
+    <script type="text/javascript" src="https://js-dos.com/cdn/js-dos-api.js"></script>
+    <script type="text/javascript">
+      var dosbox = new Dosbox({
+        id: "dosbox",
+        onload: function (dosbox) {
+          dosbox.run("Oregon_The_1990.zip", "./OREGON.EXE");
+        },
+        onrun: function (dosbox, app) {
+          console.log("App '" + app + "' is runned");
+        }
+      });
+    </script>
+  </body>
+</html>

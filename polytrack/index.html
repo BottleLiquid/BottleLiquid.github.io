@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="preload" href="forced_square.woff2" as="font" type="font/woff2" crossorigin="anonymous"/><link rel="preload" href="images/logo.svg" as="image" type="image/svg+xml"/><link rel="preload" href="images/discord.svg" as="image" type="image/svg+xml"/><link rel="manifest" href="manifest.json"/><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<style>
+  .back-button {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    padding: 8px 15px;
+    background-color: rgba(200, 0, 0, 0.8);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-family: sans-serif;
+    font-size: 0.9em;
+    z-index: 1000;
+    transition: background-color 0.2s;
+  }
+  .back-button:hover {
+    background-color: rgba(255, 0, 0, 0.9);
+  }
+  body:has(.game-toolbar-ui.visible.up) .back-button {
+    top: 121px;
+  }
+  body:has(.logo) .back-button {
+    top: 15px;
+    left: 15px;
+  }
+</style>
+<script defer="defer" src="error_screen.bundle.js"></script><script defer="defer" src="main.bundle.js"></script></head>
+<body><canvas id="screen"></canvas><div id="ui"></div><div id="transition-layer"></div>
+<a href="/gamble/index.html" class="back-button">← Back to Casino</a>
+</body></html>

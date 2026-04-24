@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>LiquidType v2.36</title>
+<title>LiquidType v2.42</title>
 <link rel="stylesheet" href="style.css">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -151,6 +151,9 @@
     </div>
     <div class="nav-r">
       <div class="coins">🧢 <span id="coin-count">0</span></div>
+      <div class="plasma-display" id="plasma-display" style="display:none" onclick="openPlasmaShop()" title="Open Plasma Shop" style="cursor:pointer">⚗ <span id="plasma-count">0</span></div>
+      <button class="nbtn plasma-shop-btn" onclick="openPlasmaShop()" id="plasma-shop-nav-btn" style="display:none">⚗ Plasma Shop</button>
+      <button class="nbtn rebirth-btn" onclick="openRebirthModal()" title="Rebirth — spend coins for Plasma">♻ Rebirth</button>
       <div class="ubadge" id="nav-user" onclick="openProfile(getU())" style="cursor:pointer;border-color:#553300;color:#ffaa44" title="View your profile">—</div>
       <a href="https://discord.gg/tKCDpUHsFM" target="_blank" class="nbtn dis">Discord</a>
       <a href="/gamble/index.html" class="nbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; text-decoration:none">🎰 Casino</a>
@@ -176,6 +179,10 @@
         <div class="h-stat-row">
           <div class="h-stat"><span class="h-val blue" id="h-wpm">0</span><span class="h-lbl">Best WPM</span></div>
           <div class="h-stat"><span class="h-val purple" id="h-themes">0</span><span class="h-lbl">Themes</span></div>
+        </div>
+        <div class="h-stat-row" id="h-plasma-row" style="display:none">
+          <div class="h-stat"><span class="h-val" style="color:#aa44ff" id="h-plasma">0</span><span class="h-lbl">⚗ Plasma</span></div>
+          <div class="h-stat"><span class="h-val" style="color:#ffaa44" id="h-rebirths">0</span><span class="h-lbl">♻ Rebirths</span></div>
         </div>
       </div>
 
@@ -1118,6 +1125,88 @@
     <button class="cheat-dismiss" onclick="document.getElementById('cheat-overlay').style.display='none'">I'm Sorry</button>
   </div>
 </div>
+</div>
+
+<!-- Rebirth Modal -->
+<div class="moverlay" id="rebirth-overlay" style="display:none">
+  <div class="modal" style="max-width:480px;text-align:center">
+    <div style="font-size:3.5rem;margin-bottom:10px">♻</div>
+    <div class="mttl" style="color:#aa44ff">Rebirth</div>
+    <div class="msub">Reset everything — ascend beyond</div>
+
+    <div style="margin:18px 0;padding:14px;background:rgba(170,68,255,.07);border:1px solid rgba(170,68,255,.25);border-radius:10px;font-size:.9rem;line-height:1.8;color:var(--text)">
+      <div style="color:#aa44ff;font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;margin-bottom:8px">What you LOSE</div>
+      🧢 All Bottlecaps → <strong style="color:#f44">0</strong><br>
+      🎨 All Themes → <strong style="color:#f44">Default only</strong>
+    </div>
+
+    <div style="margin:14px 0;padding:14px;background:rgba(0,220,255,.05);border:1px solid rgba(0,220,255,.2);border-radius:10px;font-size:.9rem;line-height:1.8;color:var(--text)">
+      <div style="color:#00dcff;font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;margin-bottom:8px">What you GAIN</div>
+      ⚗ <strong style="color:#aa44ff">+1 Plasma</strong> (special currency)<br>
+      <span style="color:var(--muted);font-size:.8rem">Use Plasma for exclusive future upgrades</span>
+    </div>
+
+    <div id="rebirth-cost-row" style="margin:14px 0;padding:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:.9rem">
+      Cost: <span id="rebirth-cost-display" style="color:#ffaa44;font-weight:700">10,000 🧢</span> &nbsp;|&nbsp;
+      Your balance: <span id="rebirth-balance-display" style="color:var(--ok);font-weight:700">0 🧢</span>
+    </div>
+
+    <div id="rebirth-err" style="color:#f44;font-size:.85rem;min-height:18px;margin-bottom:8px"></div>
+
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+      <button id="rebirth-confirm-btn" onclick="doRebirth()" style="flex:1;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,#6600cc,#aa44ff);color:#fff;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:2px;cursor:pointer;transition:.2s">⚗ REBIRTH</button>
+      <button onclick="closeRebirthModal()" style="padding:12px 20px;border:none;border-radius:8px;background:rgba(255,255,255,.08);color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:1rem;cursor:pointer">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Plasma Shop Modal -->
+<div class="moverlay" id="plasma-shop-overlay" style="display:none">
+  <div class="modal plasma-shop-modal" style="max-width:700px;max-height:90vh;overflow-y:auto">
+    <div style="text-align:center;margin-bottom:4px">
+      <div style="font-size:2.5rem">⚗</div>
+      <div class="mttl" style="color:#cc88ff;margin-top:0">Plasma Shop</div>
+      <div class="msub">Spend Plasma on exclusive perks &amp; consumables</div>
+      <div style="margin-top:8px;padding:7px 14px;background:rgba(170,68,255,.1);border:1px solid rgba(170,68,255,.3);border-radius:20px;display:inline-block;font-family:'Bebas Neue',cursive;font-size:1.1rem;color:#cc88ff;letter-spacing:2px">
+        ⚗ <span id="ps-balance">0</span> Plasma
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:8px;margin:16px 0 14px;border-bottom:1px solid rgba(255,255,255,.07);padding-bottom:10px">
+      <button class="ps-tab on" data-tab="consumables" onclick="psTab('consumables')">🎲 Consumables</button>
+      <button class="ps-tab" data-tab="perks" onclick="psTab('perks')">⚡ Permanent Perks</button>
+      <button class="ps-tab" data-tab="owned" onclick="psTab('owned')">🎒 My Items</button>
+    </div>
+
+    <!-- Consumables -->
+    <div class="ps-section" id="ps-sec-consumables">
+      <div id="ps-consumables-grid" class="ps-grid"></div>
+    </div>
+
+    <!-- Perks -->
+    <div class="ps-section" id="ps-sec-perks" style="display:none">
+      <div id="ps-perks-grid" class="ps-grid"></div>
+    </div>
+
+    <!-- Owned -->
+    <div class="ps-section" id="ps-sec-owned" style="display:none">
+      <div id="ps-owned-list"></div>
+    </div>
+
+    <button class="mbtnclose" style="background:rgba(102,0,204,.12);color:#cc88ff" onclick="closePlasmaShop()">Close</button>
+    <div style="clear:both"></div>
+  </div>
+</div>
+
+<!-- Lucky Box Result Modal -->
+<div class="moverlay" id="luckybox-overlay" style="display:none">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:4rem;margin-bottom:8px" id="lb-icon">📦</div>
+    <div class="mttl" id="lb-title" style="color:#ffcc44">Lucky Box!</div>
+    <div id="lb-result-text" style="font-size:1.1rem;color:var(--text);margin:14px 0;line-height:1.7"></div>
+    <button onclick="closeLuckyBox()" style="padding:11px 30px;border:none;border-radius:8px;background:#aa44ff;color:#fff;font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;cursor:pointer">Sick!</button>
+  </div>
 </div>
 
 <script src="script.js"></script>

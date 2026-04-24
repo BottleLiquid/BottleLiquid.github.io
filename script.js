@@ -778,7 +778,473 @@ function refreshCoins() {
   if (itemsEl) itemsEl.textContent=c;
   const invEl = document.getElementById('inv-coins');
   if (invEl) invEl.textContent=c;
+  // Plasma display
+  const plasma = UC ? (UC.plasma || 0) : 0;
+  const plasmaDisplay = document.getElementById('plasma-display');
+  const plasmaCount = document.getElementById('plasma-count');
+  const plasmaShopBtn = document.getElementById('plasma-shop-nav-btn');
+  if (plasmaDisplay && plasmaCount) {
+    plasmaCount.textContent = plasma;
+    plasmaDisplay.style.display = plasma > 0 ? 'flex' : 'none';
+  }
+  if (plasmaShopBtn) {
+    // Show shop button if player has ever rebirthed (even if plasma spent down to 0)
+    const hasRebirthed = UC && (UC.rebirths || 0) > 0;
+    plasmaShopBtn.style.display = hasRebirthed ? '' : 'none';
+  }
 }
+
+// ── REBIRTH SYSTEM ────────────────────────────────────────────────────────────
+const REBIRTH_COST = 10000; // bottlecaps required to rebirth
+
+function openRebirthModal() {
+  if (!UC) return;
+  const overlay = document.getElementById('rebirth-overlay');
+  if (!overlay) return;
+  document.getElementById('rebirth-cost-display').textContent = REBIRTH_COST.toLocaleString() + ' 🧢';
+  document.getElementById('rebirth-balance-display').textContent = (UC.coins || 0).toLocaleString() + ' 🧢';
+  document.getElementById('rebirth-err').textContent = '';
+  const btn = document.getElementById('rebirth-confirm-btn');
+  if (btn) btn.disabled = false;
+  overlay.style.display = 'flex';
+}
+
+function closeRebirthModal() {
+  const overlay = document.getElementById('rebirth-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+async function doRebirth() {
+  if (!UC || !FB_READY) return;
+  const errEl = document.getElementById('rebirth-err');
+  const btn = document.getElementById('rebirth-confirm-btn');
+
+  if ((UC.coins || 0) < REBIRTH_COST) {
+    errEl.textContent = `Not enough bottlecaps! You need ${REBIRTH_COST.toLocaleString()} 🧢.`;
+    return;
+  }
+
+  if (!confirm(`⚠ Final confirmation: You will lose ALL your bottlecaps and themes. You'll gain 1 Plasma. Continue?`)) return;
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Rebirthing...'; }
+
+  try {
+    // Calculate new values
+    const newPlasma  = (UC.plasma || 0) + 1;
+    const newRebirths = (UC.rebirths || 0) + 1;
+
+    // Wipe coins, themes — keep only default theme
+    UC.coins       = 0;
+    UC.themes      = ['default'];
+    UC.activeTheme = 'default';
+    UC.gradientColors = null;
+    UC.plasma      = newPlasma;
+    UC.rebirths    = newRebirths;
+
+    // Save to Firebase
+    await dbUpdateUser(getU(), {
+      coins:        0,
+      themes:       ['default'],
+      activeTheme:  'default',
+      gradientColors: null,
+      plasma:       newPlasma,
+      rebirths:     newRebirths,
+    });
+
+    // Apply default theme visually
+    applyTheme('default', null);
+
+    // Refresh all displays
+    refreshCoins();
+    renderHome();
+    renderShop();
+
+    closeRebirthModal();
+    showToast(`⚗ Rebirth ${newRebirths} complete! You now have ${newPlasma} Plasma.`);
+  } catch(e) {
+    console.error('Rebirth failed:', e);
+    errEl.textContent = 'Rebirth failed — try again.';
+    if (btn) { btn.disabled = false; btn.textContent = '⚗ REBIRTH'; }
+  }
+}
+// ── END REBIRTH SYSTEM ────────────────────────────────────────────────────────
+
+// ── PLASMA SHOP ───────────────────────────────────────────────────────────────
+/*
+  Plasma Items fall into 2 categories:
+    CONSUMABLES — stored as quantities in UC.plasmaConsumables = { itemId: qty }
+                  Show up in the Inventory tab with a USE button.
+    PERKS       — stored as a set in UC.plasmaPerks = [id, id, ...]
+                  Permanently active; shown in the Perks tab (greyed out if owned).
+*/
+
+const PLASMA_CONSUMABLES = [
+  {
+    id:    'lucky_box',
+    name:  'Lucky Box',
+    icon:  '📦',
+    cost:  1,
+    desc:  'Open for a random coin reward between 100 – 5,000 🧢. Could be your lucky day.',
+    rarity:'Common',
+    rarityColor: '#aaaaaa',
+  },
+  {
+    id:    'plasma_lure',
+    name:  'Plasma Lure',
+    icon:  '🟢',
+    cost:  2,
+    desc:  'Guarantee your next 10 DePoule pets land on GREEN. No losses possible.',
+    rarity:'Rare',
+    rarityColor: '#44aaff',
+  },
+  {
+    id:    'coin_surge',
+    name:  'Coin Surge',
+    icon:  '💥',
+    cost:  3,
+    desc:  'Activate to earn 2× coins from all races for 10 minutes.',
+    rarity:'Rare',
+    rarityColor: '#44aaff',
+  },
+  {
+    id:    'void_fragment',
+    name:  'Void Fragment',
+    icon:  '🌀',
+    cost:  5,
+    desc:  'A mysterious relic. Use to trigger a random powerful effect — or something weird.',
+    rarity:'Epic',
+    rarityColor: '#cc44ff',
+  },
+];
+
+const PLASMA_PERKS = [
+  {
+    id:    'dp_multiplier',
+    name:  'DePoule Booster',
+    icon:  '🦆',
+    cost:  2,
+    desc:  '+2 coins on every successful DePoule pet (permanent, stacks with upgrades).',
+    rarity:'Rare',
+    rarityColor: '#44aaff',
+  },
+  {
+    id:    'theme_discount',
+    name:  'Plasma Discount',
+    icon:  '🏷',
+    cost:  3,
+    desc:  'Permanent extra 15% off all Theme Shop purchases. Stacks with other discounts.',
+    rarity:'Rare',
+    rarityColor: '#44aaff',
+  },
+  {
+    id:    'race_bonus',
+    name:  'Speed Tax',
+    icon:  '🏁',
+    cost:  4,
+    desc:  'Earn +25% bottlecaps from every race, forever.',
+    rarity:'Epic',
+    rarityColor: '#cc44ff',
+  },
+  {
+    id:    'lucky_paws_plus',
+    name:  'Lucky Paws+',
+    icon:  '🍀',
+    cost:  6,
+    desc:  'Reduces DePoule red button chance by an extra 15% on top of all other bonuses.',
+    rarity:'Epic',
+    rarityColor: '#cc44ff',
+  },
+  {
+    id:    'plasma_saver',
+    name:  'Plasma Saver',
+    icon:  '⚗',
+    cost:  8,
+    desc:  'All future Plasma Shop consumable purchases cost 1 less Plasma (min 1).',
+    rarity:'Legendary',
+    rarityColor: '#ffcc00',
+  },
+];
+
+// Active consumable timers (in-memory only)
+let _coinSurgeUntil    = 0;
+let _plasmaLureCharges = 0; // how many guaranteed-green pets remain
+
+function hasPlasmaPerk(id) {
+  return UC && (UC.plasmaPerks || []).includes(id);
+}
+
+function plasmaItemCost(cost) {
+  if (hasPlasmaPerk('plasma_saver')) return Math.max(1, cost - 1);
+  return cost;
+}
+
+// Called by psTab() buttons
+function psTab(tab) {
+  document.querySelectorAll('.ps-tab').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  document.querySelectorAll('.ps-section').forEach(s => s.style.display = 'none');
+  const sec = document.getElementById('ps-sec-' + tab);
+  if (sec) sec.style.display = '';
+  if (tab === 'consumables') renderPSConsumables();
+  if (tab === 'perks')       renderPSPerks();
+  if (tab === 'owned')       renderPSOwned();
+}
+
+function openPlasmaShop() {
+  if (!UC) return;
+  const ov = document.getElementById('plasma-shop-overlay');
+  if (!ov) return;
+  // Reset to consumables tab
+  psTab('consumables');
+  document.getElementById('ps-balance').textContent = UC.plasma || 0;
+  ov.style.display = 'flex';
+}
+
+function closePlasmaShop() {
+  const ov = document.getElementById('plasma-shop-overlay');
+  if (ov) ov.style.display = 'none';
+}
+
+function renderPSConsumables() {
+  const grid = document.getElementById('ps-consumables-grid');
+  if (!grid || !UC) return;
+  const plasma = UC.plasma || 0;
+  const inventory = UC.plasmaConsumables || {};
+
+  grid.innerHTML = PLASMA_CONSUMABLES.map(item => {
+    const cost = plasmaItemCost(item.cost);
+    const owned = inventory[item.id] || 0;
+    const canAfford = plasma >= cost;
+    return `
+      <div class="ps-card">
+        <div class="ps-card-top">
+          <div class="ps-card-icon">${item.icon}</div>
+          <div class="ps-card-rarity" style="color:${item.rarityColor}">${item.rarity}</div>
+        </div>
+        <div class="ps-card-name">${item.name}</div>
+        <div class="ps-card-desc">${item.desc}</div>
+        ${owned > 0 ? `<div class="ps-owned-qty">x${owned} owned</div>` : ''}
+        <button class="ps-buy-btn" onclick="buyPlasmaConsumable('${item.id}')" ${!canAfford ? 'disabled' : ''}>
+          ⚗ ${cost} Plasma
+        </button>
+      </div>`;
+  }).join('');
+}
+
+function renderPSPerks() {
+  const grid = document.getElementById('ps-perks-grid');
+  if (!grid || !UC) return;
+  const plasma = UC.plasma || 0;
+
+  grid.innerHTML = PLASMA_PERKS.map(perk => {
+    const cost = plasmaItemCost(perk.cost);
+    const owned = hasPlasmaPerk(perk.id);
+    const canAfford = plasma >= cost;
+    return `
+      <div class="ps-card ${owned ? 'ps-card-owned' : ''}">
+        <div class="ps-card-top">
+          <div class="ps-card-icon">${perk.icon}</div>
+          <div class="ps-card-rarity" style="color:${perk.rarityColor}">${perk.rarity}</div>
+        </div>
+        <div class="ps-card-name">${perk.name}</div>
+        <div class="ps-card-desc">${perk.desc}</div>
+        ${owned
+          ? `<div class="ps-owned-badge">✅ Owned — Active</div>`
+          : `<button class="ps-buy-btn" onclick="buyPlasmaPerk('${perk.id}')" ${!canAfford ? 'disabled' : ''}>⚗ ${cost} Plasma</button>`
+        }
+      </div>`;
+  }).join('');
+}
+
+function renderPSOwned() {
+  const list = document.getElementById('ps-owned-list');
+  if (!list || !UC) return;
+  const inv  = UC.plasmaConsumables || {};
+  const perks = UC.plasmaPerks || [];
+
+  const consumableRows = PLASMA_CONSUMABLES
+    .filter(item => (inv[item.id] || 0) > 0)
+    .map(item => `
+      <div class="ps-owned-row">
+        <span class="ps-owned-icon">${item.icon}</span>
+        <div class="ps-owned-info">
+          <div class="ps-owned-name">${item.name} <span style="color:#aa44ff">×${inv[item.id]}</span></div>
+          <div class="ps-owned-desc">${item.desc}</div>
+        </div>
+        <button class="ps-use-btn" onclick="usePlasmaItem('${item.id}')">USE</button>
+      </div>`).join('');
+
+  const perkRows = PLASMA_PERKS
+    .filter(p => perks.includes(p.id))
+    .map(p => `
+      <div class="ps-owned-row">
+        <span class="ps-owned-icon">${p.icon}</span>
+        <div class="ps-owned-info">
+          <div class="ps-owned-name">${p.name} <span style="color:#00e676;font-size:.75rem">PERMANENT</span></div>
+          <div class="ps-owned-desc">${p.desc}</div>
+        </div>
+        <div style="color:#00e676;font-size:.8rem;font-weight:700;white-space:nowrap">✅ Active</div>
+      </div>`).join('');
+
+  if (!consumableRows && !perkRows) {
+    list.innerHTML = '<div class="empty" style="padding:30px">You don\'t own any Plasma items yet. Buy some!</div>';
+    return;
+  }
+
+  list.innerHTML = `
+    ${consumableRows ? `<div style="font-family:'Bebas Neue',cursive;letter-spacing:2px;color:#cc88ff;margin-bottom:10px;font-size:1.1rem">🎲 Consumables</div>${consumableRows}` : ''}
+    ${perkRows ? `<div style="font-family:'Bebas Neue',cursive;letter-spacing:2px;color:#cc88ff;margin:18px 0 10px;font-size:1.1rem">⚡ Permanent Perks</div>${perkRows}` : ''}
+  `;
+}
+
+async function buyPlasmaConsumable(itemId) {
+  if (!UC) return;
+  const item = PLASMA_CONSUMABLES.find(i => i.id === itemId);
+  if (!item) return;
+  const cost = plasmaItemCost(item.cost);
+  if ((UC.plasma || 0) < cost) { showToast('Not enough Plasma!'); return; }
+
+  UC.plasma -= cost;
+  UC.plasmaConsumables = UC.plasmaConsumables || {};
+  UC.plasmaConsumables[itemId] = (UC.plasmaConsumables[itemId] || 0) + 1;
+
+  await dbUpdateUser(getU(), { plasma: UC.plasma, plasmaConsumables: UC.plasmaConsumables });
+  refreshCoins();
+  document.getElementById('ps-balance').textContent = UC.plasma;
+  renderPSConsumables();
+  showToast(`✅ ${item.icon} ${item.name} added to your inventory!`);
+}
+
+async function buyPlasmaPerk(perkId) {
+  if (!UC) return;
+  const perk = PLASMA_PERKS.find(p => p.id === perkId);
+  if (!perk) return;
+  if (hasPlasmaPerk(perkId)) { showToast('You already have this perk!'); return; }
+  const cost = plasmaItemCost(perk.cost);
+  if ((UC.plasma || 0) < cost) { showToast('Not enough Plasma!'); return; }
+
+  UC.plasma -= cost;
+  UC.plasmaPerks = [...(UC.plasmaPerks || []), perkId];
+
+  await dbUpdateUser(getU(), { plasma: UC.plasma, plasmaPerks: UC.plasmaPerks });
+  refreshCoins();
+  document.getElementById('ps-balance').textContent = UC.plasma;
+  renderPSPerks();
+  showToast(`✅ ${perk.icon} ${perk.name} is now permanently active!`);
+}
+
+// Also called from the Inventory tab
+async function usePlasmaItem(itemId) {
+  if (!UC) return;
+  const inv = UC.plasmaConsumables || {};
+  if (!inv[itemId] || inv[itemId] < 1) { showToast('You don\'t have that item!'); return; }
+
+  // Consume one
+  inv[itemId]--;
+  if (inv[itemId] === 0) delete inv[itemId];
+  UC.plasmaConsumables = inv;
+
+  let saved = true;
+
+  if (itemId === 'lucky_box') {
+    // ── Lucky Box: 100–5000 coins, weighted toward lower ──────────────────
+    const roll = Math.random();
+    let reward;
+    if      (roll < 0.50) reward = Math.floor(Math.random() * 400) + 100;   // 50%: 100–500
+    else if (roll < 0.80) reward = Math.floor(Math.random() * 500) + 500;   // 30%: 500–1000
+    else if (roll < 0.95) reward = Math.floor(Math.random() * 2000) + 1000; // 15%: 1000–3000
+    else                  reward = Math.floor(Math.random() * 2000) + 3000; //  5%: 3000–5000
+
+    UC.coins = (UC.coins || 0) + reward;
+    await dbUpdateUser(getU(), { coins: UC.coins, plasmaConsumables: inv });
+    refreshCoins();
+
+    // Show result modal
+    const isJackpot = reward >= 3000;
+    document.getElementById('lb-icon').textContent    = isJackpot ? '💎' : '📦';
+    document.getElementById('lb-title').textContent   = isJackpot ? 'JACKPOT!!' : 'Lucky Box';
+    document.getElementById('lb-title').style.color   = isJackpot ? '#ffcc00' : '#aa44ff';
+    document.getElementById('lb-result-text').innerHTML =
+      `You opened a Lucky Box and found<br><span style="font-family:'Bebas Neue',cursive;font-size:2.5rem;color:${isJackpot?'#ffcc00':'#00e676'}">+${reward.toLocaleString()} 🧢</span>`;
+    closePlasmaShop();
+    document.getElementById('luckybox-overlay').style.display = 'flex';
+
+  } else if (itemId === 'plasma_lure') {
+    _plasmaLureCharges += 10;
+    await dbUpdateUser(getU(), { plasmaConsumables: inv });
+    showToast('🟢 Plasma Lure active! Next 10 DePoule pets are guaranteed GREEN.');
+    closePlasmaShop();
+
+  } else if (itemId === 'coin_surge') {
+    _coinSurgeUntil = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await dbUpdateUser(getU(), { plasmaConsumables: inv });
+    showToast('💥 Coin Surge active! 2× race coins for 10 minutes!');
+    closePlasmaShop();
+
+  } else if (itemId === 'void_fragment') {
+    // Random wild effect
+    const effects = [
+      async () => {
+        const r = Math.floor(Math.random()*3000)+2000;
+        UC.coins=(UC.coins||0)+r;
+        await dbUpdateUser(getU(),{coins:UC.coins,plasmaConsumables:inv});
+        refreshCoins();
+        return `The Void grants you <b style="color:#ffcc00">+${r.toLocaleString()} 🧢</b>. The void is generous today.`;
+      },
+      async () => {
+        const bonus = 1;
+        UC.plasma = (UC.plasma||0) + bonus;
+        await dbUpdateUser(getU(),{plasma:UC.plasma,plasmaConsumables:inv});
+        refreshCoins();
+        return `The Void echoes back. You gained <b style="color:#aa44ff">+${bonus} ⚗ Plasma</b>.`;
+      },
+      async () => {
+        _plasmaLureCharges += 5;
+        await dbUpdateUser(getU(),{plasmaConsumables:inv});
+        return `Eerie green light fills your screen. <b style="color:#44ff88">5 guaranteed green pets</b> incoming.`;
+      },
+      async () => {
+        _coinSurgeUntil = Date.now() + 5*60*1000;
+        await dbUpdateUser(getU(),{plasmaConsumables:inv});
+        return `Void energy surges through the server. <b style="color:#ff8800">2× race coins for 5 minutes</b>.`;
+      },
+      async () => {
+        const loss = Math.floor(Math.random()*500)+100;
+        UC.coins = Math.max(0,(UC.coins||0)-loss);
+        await dbUpdateUser(getU(),{coins:UC.coins,plasmaConsumables:inv});
+        refreshCoins();
+        return `The Void takes. You lose <b style="color:#f44">−${loss} 🧢</b>. It happens.`;
+      },
+    ];
+    const pick = effects[Math.floor(Math.random()*effects.length)];
+    const msg = await pick();
+    saved = false; // already saved inside each effect
+    document.getElementById('lb-icon').textContent    = '🌀';
+    document.getElementById('lb-title').textContent   = 'Void Fragment';
+    document.getElementById('lb-title').style.color   = '#cc44ff';
+    document.getElementById('lb-result-text').innerHTML = msg;
+    closePlasmaShop();
+    document.getElementById('luckybox-overlay').style.display = 'flex';
+
+  } else {
+    saved = false;
+    showToast('Unknown item.');
+  }
+
+  if (saved) {
+    // already saved in each branch above
+  }
+
+  // Refresh inventory if open
+  if (document.getElementById('tab-inventory')?.classList.contains('on')) {
+    renderInventory();
+  }
+}
+
+function closeLuckyBox() {
+  document.getElementById('luckybox-overlay').style.display = 'none';
+}
+
+// ── END PLASMA SHOP ───────────────────────────────────────────────────────────
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function esca(s){return String(s).replace(/'/g,"\\'")}
 
@@ -789,6 +1255,17 @@ async function renderHome() {
   document.getElementById('h-streak').textContent = UC.streak || 1;
   document.getElementById('h-wpm').textContent = UC.maxWpm || 0;
   document.getElementById('h-themes').textContent = (UC.themes || []).length;
+  // Show plasma row only if player has rebirthed
+  const plasmaRow = document.getElementById('h-plasma-row');
+  if (plasmaRow) {
+    const plasma = UC.plasma || 0;
+    const rebirths = UC.rebirths || 0;
+    if (rebirths > 0 || plasma > 0) {
+      plasmaRow.style.display = '';
+      document.getElementById('h-plasma').textContent = plasma;
+      document.getElementById('h-rebirths').textContent = rebirths;
+    }
+  }
 
   // Update Community info
   const teamNameEl = document.getElementById('h-team-name');
@@ -947,6 +1424,10 @@ async function soloFinished() {
     const bonusCoins = Math.round(coins * (totalBonus / 100));
     coins += bonusCoins;
   }
+  // Plasma perk: Speed Tax +25% race coins
+  if (hasPlasmaPerk('race_bonus')) coins = Math.round(coins * 1.25);
+  // Coin Surge consumable: 2x race coins
+  if (_coinSurgeUntil > Date.now()) coins = Math.round(coins * 2);
   
   if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins(); await processTax(coins);}
   await checkAndGrantSecretThemes(wpm);
@@ -1180,6 +1661,10 @@ async function liveFinished(opponentWon=false) {
     const bonusCoins = Math.round(coins * (totalBonus / 100));
     coins += bonusCoins;
   }
+  // Plasma perk: Speed Tax +25% race coins
+  if (hasPlasmaPerk('race_bonus')) coins = Math.round(coins * 1.25);
+  // Coin Surge consumable: 2x race coins
+  if (_coinSurgeUntil > Date.now()) coins = Math.round(coins * 2);
   
   if(UC){UC.coins=(UC.coins||0)+coins;await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins(); await processTax(coins);}
   await checkAndGrantSecretThemes(wpm);
@@ -1394,33 +1879,53 @@ async function renderInventory() {
   
   const grid = document.getElementById('inventory-grid');
   const inventory = UC.inventory || [];
+  const plasmaInv = UC.plasmaConsumables || {};
+  const hasPlasmaItems = Object.values(plasmaInv).some(q => q > 0);
   
-  if (inventory.length === 0) {
+  if (inventory.length === 0 && !hasPlasmaItems) {
     grid.innerHTML = '<div class="empty">Your inventory is empty. Buy items from the shop!</div>';
     return;
   }
   
-  const allItems = await getAllShopItems();
-  const ownedItems = allItems.filter(item => inventory.includes(item.id));
-  
-  grid.innerHTML = ownedItems.map(item => {
-    const isActive = UC.activeItems && UC.activeItems.includes(item.id);
-    
-    return `
-      <div class="inv-item-card ${isActive ? 'active' : ''}">
-        <div class="item-icon">${esc(item.icon || '🎁')}</div>
-        <div class="item-name">${esc(item.name)}</div>
-        <div class="item-desc">${esc(item.description)}</div>
-        ${item.ability ? `<div class="item-ability">⚡ ${getAbilityName(item.ability)}</div>` : ''}
-        ${isActive 
-          ? '<div class="item-active-badge">ACTIVE</div><button class="item-deactivate-btn" onclick="deactivateItem(\'' + esca(item.id) + '\')">Deactivate</button>'
-          : '<button class="item-activate-btn" onclick="activateItem(\'' + esca(item.id) + '\')">Activate</button>'
-        }
-      </div>
-    `;
-  }).join('');
-}
+  let html = '';
 
+  // Regular shop items
+  if (inventory.length > 0) {
+    const allItems = await getAllShopItems();
+    const ownedItems = allItems.filter(item => inventory.includes(item.id));
+    html += ownedItems.map(item => {
+      const isActive = UC.activeItems && UC.activeItems.includes(item.id);
+      return `
+        <div class="inv-item-card ${isActive ? 'active' : ''}">
+          <div class="item-icon">${esc(item.icon || '🎁')}</div>
+          <div class="item-name">${esc(item.name)}</div>
+          <div class="item-desc">${esc(item.description)}</div>
+          ${item.ability ? `<div class="item-ability">⚡ ${getAbilityName(item.ability)}</div>` : ''}
+          ${isActive
+            ? '<div class="item-active-badge">ACTIVE</div><button class="item-deactivate-btn" onclick="deactivateItem(\'' + esca(item.id) + '\')">Deactivate</button>'
+            : '<button class="item-activate-btn" onclick="activateItem(\'' + esca(item.id) + '\')">Activate</button>'
+          }
+        </div>`;
+    }).join('');
+  }
+
+  // Plasma consumables — shown in same grid with a USE button
+  if (hasPlasmaItems) {
+    PLASMA_CONSUMABLES.filter(item => (plasmaInv[item.id] || 0) > 0).forEach(item => {
+      html += `
+        <div class="inv-item-card plasma-inv-card">
+          <div class="item-icon">${item.icon}</div>
+          <div class="inv-plasma-badge">⚗ PLASMA</div>
+          <div class="item-name">${item.name} <span style="color:#aa44ff">×${plasmaInv[item.id]}</span></div>
+          <div class="item-desc">${item.desc}</div>
+          <div class="item-rarity" style="color:${item.rarityColor}">${item.rarity}</div>
+          <button class="item-activate-btn" style="background:rgba(102,0,204,.3);border-color:#aa44ff;color:#dd99ff" onclick="usePlasmaItem('${item.id}')">⚗ USE</button>
+        </div>`;
+    });
+  }
+
+  grid.innerHTML = html;
+}
 // Buy item
 async function buyItem(itemId) {
   if (!UC) return;
@@ -2103,7 +2608,10 @@ async function petDePoule(){
   // Quick Hands upgrade: 50% cooldown reduction
   const cooldownMs=dpHasUpgrade('sp1')?60:120;
   setTimeout(()=>petState.cooldown=false,cooldownMs);
-  const won=petState.color==='green';
+  // Plasma Lure: consume a charge to force a win
+  const _lureActive = _plasmaLureCharges > 0;
+  if (_lureActive) _plasmaLureCharges--;
+  const won = _lureActive || petState.color==='green';
   petState.pets++;
   if(UC){UC.totalPets=(UC.totalPets||0)+1;if(UC.totalPets===50){dbUpdateUser(getU(),{totalPets:UC.totalPets});grantBadge('depoule_pet');}if(UC.totalPets===100){dbUpdateUser(getU(),{totalPets:UC.totalPets});grantBadge('depoule_chosen');}}
   if(won){
@@ -2120,12 +2628,15 @@ async function petDePoule(){
     // Combo multiplier bonus
     const comboMult=dpHasUpgrade('cm_mult')?1:0;
     const coinGain=isJackpot?jpTotal:petState.combo>=5?(3+comboMult+baseEarn):petState.combo>=3?(2+comboMult+baseEarn):(1+baseEarn);
-    petState.net+=coinGain;
-    UC.coins=Math.max(0,(UC.coins||0)+coinGain);
+    // Plasma perk: DePoule Booster adds +2 per win
+    const plasmaBonus = hasPlasmaPerk('dp_multiplier') ? 2 : 0;
+    const finalCoinGain = coinGain + plasmaBonus;
+    petState.net+=finalCoinGain;
+    UC.coins=Math.max(0,(UC.coins||0)+finalCoinGain);
     await dbUpdateUser(getU(),{coins:UC.coins});refreshCoins();
     const res=document.getElementById('pet-result');
-    if(isJackpot){res.textContent='JACKPOT +'+coinGain+'🪙';res.className='pet-result jackpot';showToast('JACKPOT!! +'+coinGain+' coins! 🎰');}
-    else{res.textContent='+'+(coinGain>1?coinGain+' 🧢':'1 🪙');res.className='pet-result win';}
+    if(isJackpot){res.textContent='JACKPOT +'+finalCoinGain+'🪙';res.className='pet-result jackpot';showToast('JACKPOT!! +'+finalCoinGain+' coins! 🎰');}
+    else{res.textContent='+'+(finalCoinGain>1?finalCoinGain+' 🧢':'1 🪙');res.className='pet-result win';}
     const hint=document.getElementById('pet-hint');
     if(hint){hint.className='pet-hint '+(isJackpot?'jackpot-hint':'good');hint.textContent=isJackpot?'JACKPOT!! 🎰':WIN_MESSAGES[Math.floor(Math.random()*WIN_MESSAGES.length)]+(petState.combo>1?' (x'+petState.combo+'!)':'');}
     petState.rageMode=false;const skl=document.getElementById('dp-skull');if(skl)skl.classList.remove('rage');
@@ -4130,7 +4641,8 @@ function getDPStreakDiscount() {
 }
 
 function getTotalDiscount() {
-  return Math.min(50, getDPPermanentDiscount() + getDPStreakDiscount());
+  const plasmaDisc = hasPlasmaPerk('theme_discount') ? 15 : 0;
+  return Math.min(60, getDPPermanentDiscount() + getDPStreakDiscount() + plasmaDisc);
 }
 
 function getDiscountedPrice(price) {

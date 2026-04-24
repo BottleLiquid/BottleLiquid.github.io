@@ -10,7 +10,7 @@
 :root{--bg1:#000;--bg2:#0d0000;--bg3:#1a0000;--accent:#e60000;--accent2:#ff3333;--card:rgba(30,0,0,.75);--cb:rgba(200,0,0,.25);--text:#f5f5f5;--muted:rgba(255,255,255,.4);--glow:0 0 16px rgba(200,0,0,.5);--ok:#00e676;--bad:#ff1744;--inp:rgba(0,0,0,.4);--gold:#ffd700}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{overflow-x:hidden}
 body{min-height:100vh;background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 50%,var(--bg3) 100%);color:var(--text);font-family:'Rajdhani',sans-serif;display:flex;flex-direction:column;align-items:center;padding:0 16px 60px;position:relative;overflow-x:hidden;transition:filter 0.3s}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(200,0,0,.07) 0%,transparent 70%);animation:ambientPulse 4s ease-in-out infinite}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(200,0,0,.07) 0%,transparent 70%);animation:ambientPulse 4s ease-in-out infinite;transition: opacity 0.5s}
 @keyframes ambientPulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
 .scan-line{position:fixed;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,50,50,.12),transparent);animation:scanDown 8s linear infinite;pointer-events:none;z-index:1}
 @keyframes scanDown{0%{top:-2px}100%{top:100vh}}
@@ -196,17 +196,18 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 }
 
 /* ─── GEOMETRY DASH CLONE ─── */
-#gd-modal{position:fixed;inset:0;background:#000;z-index:9000;display:none;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
-#gd-modal.open{display:flex}
-#gd-canvas{display:block;background:#1a1a2e;image-rendering:crisp-edges}
-#gd-ui{position:absolute;top:0;left:0;right:0;z-index:9001;padding:20px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);pointer-events:none;transition:opacity 0.3s}
+#gd-modal{position:fixed;inset:0;background:#000;z-index:9000;display:none;overflow:hidden}
+#gd-modal.open{display:block}
+#gd-canvas{width:100vw;height:100vh;display:block;background:#1a1a2e;image-rendering:auto}
+#gd-ui{position:absolute;top:20px;left:24px;right:24px;display:flex;align-items:center;justify-content:space-between;z-index:100;max-width:none;padding:0;pointer-events:none}
+#gd-ui > *{pointer-events:auto}
 .gd-info{display:flex;align-items:center;gap:16px}
 .gd-level-name{font-family:'Bebas Neue',cursive;font-size:1.4rem;letter-spacing:3px;color:#fff}
 .gd-pct{font-family:'JetBrains Mono',monospace;font-size:.88rem;color:rgba(255,255,255,.5);letter-spacing:1px}
 .gd-attempts{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:rgba(255,255,255,.3)}
-.gd-close{pointer-events:auto;padding:6px 14px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-family:'Rajdhani',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:.15s}
+.gd-close{padding:6px 14px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-family:'Rajdhani',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:.15s}
 .gd-close:hover{border-color:rgba(255,100,100,.4);color:#ff6666;background:rgba(200,0,0,.1)}
-.gd-progress-bar{position:absolute;top:0;left:0;right:0;z-index:9002;height:4px;background:rgba(255,255,255,.12);border-radius:0;margin:0}
+.gd-progress-bar{position:absolute;top:0;left:0;right:0;width:100%;max-width:none;height:4px;background:rgba(255,255,255,.1);border-radius:0;margin:0;z-index:100}
 .gd-prog-fill{height:100%;border-radius:2px;width:0%;transition:width .2s}
 .gd-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
 .gd-big-msg{font-family:'Bebas Neue',cursive;font-size:4rem;letter-spacing:8px;text-shadow:0 0 30px currentColor;opacity:0;transform:scale(2);transition:opacity .3s,transform .3s}
@@ -236,6 +237,78 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .gd-lc-stars{font-size:.9rem}
 .gd-lc-best{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:rgba(255,255,255,.3);text-align:right;align-self:flex-end}
 
+
+/* ════════════════════════════════════════
+   TOWER DEFENSE
+════════════════════════════════════════ */
+#td-modal{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9100;display:none;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:0}
+#td-modal.open{display:flex; overflow: hidden}
+#td-canvas{display:block;image-rendering:crisp-edges;width:100%;height:100%;cursor:crosshair}
+.td-topbar{width:100%;max-width:760px;display:flex;align-items:center;justify-content:space-between;padding:8px 4px;gap:8px;flex-wrap:wrap}
+.td-stat{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:52px}
+.td-stat-val{font-family:'Bebas Neue',cursive;font-size:1.5rem;color:#fff;letter-spacing:1px;line-height:1}
+.td-stat-lbl{font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.td-stat-val.hp{color:#ff4444}.td-stat-val.gold{color:#ffd700}.td-stat-val.wave{color:#44aaff}
+.td-close-btn{padding:6px 14px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);font-family:'Rajdhani',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:.15s}
+.td-close-btn:hover{border-color:rgba(255,80,80,.5);color:#ff6666}
+.td-towers-bar{width:100%;max-width:760px;display:flex;gap:6px;flex-wrap:wrap;padding:6px 0;border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.07);margin:4px 0}
+.td-tower-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 10px;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.05);cursor:pointer;transition:.18s;min-width:64px;flex:1}
+.td-tower-btn:hover:not(.cant-afford){background:rgba(68,170,255,.12);border-color:rgba(68,170,255,.4)}
+.td-tower-btn.selected{background:rgba(68,170,255,.2);border-color:#44aaff;box-shadow:0 0 10px rgba(68,170,255,.3)}
+.td-tower-btn.cant-afford{opacity:.35;cursor:not-allowed}
+.td-tower-icon{font-size:1.5rem;line-height:1}
+.td-tower-name{font-family:'Bebas Neue',cursive;font-size:.72rem;letter-spacing:1px;color:rgba(255,255,255,.7)}
+.td-tower-cost{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#ffd700}
+.td-wave-btn{padding:10px 24px;border:none;border-radius:8px;background:linear-gradient(90deg,#006633,#00aa55);color:#fff;font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:3px;cursor:pointer;transition:.2s;box-shadow:0 0 16px rgba(0,180,80,.3)}
+.td-wave-btn:hover{transform:translateY(-2px);box-shadow:0 0 28px rgba(0,220,100,.5)}
+.td-wave-btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.td-log{font-size:.72rem;color:rgba(255,255,255,.35);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-align:center;min-height:18px;margin-top:2px}
+.td-enemy-bar{width:100%;max-width:760px;display:flex;gap:8px;flex-wrap:wrap;padding:4px 0}
+.td-enemy-info{display:flex;align-items:center;gap:6px;padding:5px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:7px;font-size:.72rem}
+.td-enemy-icon{font-size:1.1rem}
+.td-enemy-name{font-family:'Bebas Neue',cursive;letter-spacing:1px;color:rgba(255,255,255,.65);font-size:.78rem}
+/* TD tower panel upgrade/sell button hover */
+#tdtp-upgrade-btn:hover:not(:disabled){background:rgba(0,180,80,.28)!important;border-color:#00e676!important}
+#tdtp-sell-btn:hover{background:rgba(255,100,0,.24)!important;border-color:#ff8844!important}
+#tdtp-upgrade-btn:disabled{opacity:.3;cursor:not-allowed}
+/* TD tower selected glow on canvas */
+
+/* Sidebar Layout Styles */
+.td-main-layout{display:flex;width:100vw;height:100vh}
+.td-canvas-wrap{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050000;overflow:hidden}
+.td-sidebar{width:320px;height:100%;background:linear-gradient(180deg,#0a0000,#140000);border-left:2px solid #330000;padding:24px 18px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;z-index:100;box-shadow:-10px 0 30px rgba(0,0,0,.5)}
+.td-sidebar-section{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:15px}
+.td-sidebar-title{font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;color:var(--accent2);margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:5px}
+.td-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px}
+.td-stat{min-width:0;background:rgba(0,0,0,.3);padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.05)}
+.td-sidebar .td-towers-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:none;border:none;margin:0;padding:0}
+.td-sidebar .td-tower-btn{min-width:0;padding:8px 4px}
+#td-tower-panel{max-width:none;margin-top:0;padding:15px}
+.td-tp-content{display:flex;flex-direction:column;gap:12px}
+.td-tp-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.td-tp-btns{display:flex;flex-direction:column;gap:8px}
+.td-tp-btns button{width:100%}
+
+.td-level-select{width:100%;max-width:760px;padding:4px 0}
+.td-ls-ttl{font-family:'Bebas Neue',cursive;font-size:2.2rem;letter-spacing:8px;color:#fff;text-align:center;margin-bottom:4px}
+.td-ls-sub{font-size:.78rem;letter-spacing:3px;color:rgba(255,255,255,.3);text-align:center;margin-bottom:18px;text-transform:uppercase}
+.td-lv-card{border-radius:13px;padding:18px 20px;margin-bottom:10px;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:16px;border:2px solid}
+.td-gm-select{display:flex;gap:10px;justify-content:center;margin-bottom:20px}
+.td-lv-card:hover{transform:translateY(-2px);filter:brightness(1.1)}
+.td-lv-endless{background:linear-gradient(135deg,rgba(200,0,0,.18),rgba(80,0,0,.25));border-color:rgba(200,0,0,.5)!important;position:relative;overflow:hidden}
+.td-lv-endless::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(200,0,0,.04) 8px,rgba(200,0,0,.04) 16px)}
+.td-lv-endless:hover{box-shadow:0 0 24px rgba(200,0,0,.35)}
+@keyframes endlessPulse{0%,100%{text-shadow:0 0 8px #ff2222}50%{text-shadow:0 0 22px #ff2222,0 0 44px rgba(255,0,0,.4)}}
+.td-lv-endless .td-lv-name{color:#ff4444;animation:endlessPulse 2s ease-in-out infinite}
+#td-endless-badge{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:none;align-items:center;gap:8px;padding:5px 16px;background:rgba(200,0,0,.15);border:1px solid rgba(200,0,0,.35);border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#ff6666;letter-spacing:2px;animation:endlessPulse 1.8s ease-in-out infinite}
+.td-lv1{background:rgba(0,100,200,.1);border-color:rgba(0,150,255,.35)}
+.td-lv2{background:rgba(180,50,0,.1);border-color:rgba(255,100,0,.35)}
+.td-lv3{background:rgba(120,0,180,.1);border-color:rgba(180,0,255,.35)}
+.td-lv-icon{font-size:2.2rem;flex-shrink:0}
+.td-lv-info{flex:1}
+.td-lv-name{font-family:'Bebas Neue',cursive;font-size:1.35rem;letter-spacing:3px;color:#fff}
+.td-lv-desc{font-size:.76rem;color:rgba(255,255,255,.5);margin-top:3px;line-height:1.4}
+.td-lv-reward{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#ffd700;margin-top:4px}
 </style>
 </head>
 <body>
@@ -254,13 +327,17 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
     <div class="gtab" onclick="switchGame('roulette')">🎡 Roulette</div>
     <div class="gtab" onclick="switchGame('flip')">🪙 Flip</div>
     <div class="gtab" onclick="switchGame('dice')">🎲 Dice</div>
-    <div class="gtab" onclick="switchGame('whitejohn')">🃏 21</div>
+    <div class="gtab" onclick="switchGame('whitejohn')">🃏 White John</div>
     <div class="gtab" onclick="switchGame('chess')">♟️ Chess</div>
     <div class="gtab" onclick="switchGame('highlow')">🃏 High/Low</div>
     <div class="gtab" onclick="switchGame('crash')">📈 Crash</div>
     <div class="gtab" onclick="switchGame('plinko')">📍 Plinko</div>
     <div class="gtab" onclick="switchGame('mega')">🏆 Mega</div>
     <div class="gtab" onclick="switchGame('gd')" style="background:rgba(0,200,80,.08);border-color:rgba(0,200,80,.2);color:#00e676">🟩 GD</div>
+    <div class="gtab" onclick="switchGame('td')" style="background:rgba(0,120,255,.08);border-color:rgba(0,120,255,.2);color:#44aaff">🏰 TD</div>
+    <div class="gtab" onclick="window.location.href='/polytrack'" style="background:rgba(255,165,0,.08);border-color:rgba(255,165,0,.2);color:#ffaa00">🏎️ PolyTrack</div>
+    <div class="gtab" onclick="window.location.href='/bloxorz/index.html'" style="background:rgba(100,100,100,.08);border-color:rgba(100,100,100,.2);color:#cccccc">📦 Bloxorz</div>
+    <div class="gtab" onclick="window.location.href='/oregon-trail/index.html'" style="background:rgba(139,69,19,.08);border-color:rgba(139,69,19,.2);color:#d2b48c">🛻 Oregon Trail</div>
   </div>
 
   <!-- SLOTS (existing) -->
@@ -702,12 +779,258 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
           </div>
           <div class="gd-lc-best" id="gd-best-2">BEST: 0%</div>
         </div>
+        <div class="gd-level-card lv1" onclick="startGD(3)" style="background:linear-gradient(135deg,#00cc66,#008844)">
+          <div class="gd-lc-icon">💚</div>
+          <div class="gd-lc-info">
+            <div class="gd-lc-name">Neon Rush</div>
+            <div class="gd-lc-desc">Green neon highways through cyberspace. Moderate speed with technical precision jumps.</div>
+            <div class="gd-lc-diff"><span class="gd-lc-stars">⭐⭐⭐</span> Hard · 5.8x speed</div>
+          </div>
+          <div class="gd-lc-best" id="gd-best-3">BEST: 0%</div>
+        </div>
+        <div class="gd-level-card lv1" onclick="startGD(4)" style="background:linear-gradient(135deg,#ff6600,#cc4400)">
+          <div class="gd-lc-icon">🔥</div>
+          <div class="gd-lc-info">
+            <div class="gd-lc-name">Inferno</div>
+            <div class="gd-lc-desc">Blazing through hellfire. High speed with intense spike patterns and triple jumps.</div>
+            <div class="gd-lc-diff"><span class="gd-lc-stars">⭐⭐⭐⭐</span> Insane · 7.5x speed</div>
+          </div>
+          <div class="gd-lc-best" id="gd-best-4">BEST: 0%</div>
+        </div>
+        <div class="gd-level-card lv2" onclick="startGD(5)" style="background:linear-gradient(135deg,#00ffcc,#00aa88)">
+          <div class="gd-lc-icon">💎</div>
+          <div class="gd-lc-info">
+            <div class="gd-lc-name">Crystal Caverns</div>
+            <div class="gd-lc-desc">Navigate glittering underground caves. Precision platforming with tricky timing.</div>
+            <div class="gd-lc-diff"><span class="gd-lc-stars">⭐⭐⭐⭐</span> Insane · 6.2x speed</div>
+          </div>
+          <div class="gd-lc-best" id="gd-best-5">BEST: 0%</div>
+        </div>
+        <div class="gd-level-card lv3" onclick="startGD(6)" style="background:linear-gradient(135deg,#ff0044,#aa0022)">
+          <div class="gd-lc-icon">😈</div>
+          <div class="gd-lc-info">
+            <div class="gd-lc-name">Demon's Lair</div>
+            <div class="gd-lc-desc">Enter the demon dimension. Extreme speed, brutal spike walls, unforgiving. Only the best survive.</div>
+            <div class="gd-lc-diff"><span class="gd-lc-stars">⭐⭐⭐⭐⭐</span> Extreme Demon · 8.5x speed · Suffering</div>
+          </div>
+          <div class="gd-lc-best" id="gd-best-6">BEST: 0%</div>
+        </div>
+        <div class="gd-level-card lv2" onclick="startGD(7)" style="background:linear-gradient(135deg,#88ff00,#66cc00)">
+          <div class="gd-lc-icon">☢️</div>
+          <div class="gd-lc-info">
+            <div class="gd-lc-name">Toxic Wasteland</div>
+            <div class="gd-lc-desc">Radioactive ruins and hazardous terrain. Fast-paced with dangerous triple jump sections.</div>
+            <div class="gd-lc-diff"><span class="gd-lc-stars">⭐⭐⭐⭐</span> Insane · 6.8x speed</div>
+          </div>
+          <div class="gd-lc-best" id="gd-best-7">BEST: 0%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- TOWER DEFENSE -->
+  <div class="game-section" id="game-td">
+    <div id="td-title-screen" style="text-align:center; padding: 60px 20px; background: rgba(0,0,0,0.4); border-radius: 20px; border: 1px solid #004488; box-shadow: 0 0 50px rgba(0,68,136,0.3); margin-top: 20px;">
+       <div style="font-family:'Bebas Neue',cursive; font-size: 4.5rem; letter-spacing: 12px; color: #44aaff; text-shadow: 0 0 25px rgba(68,170,255,0.7); line-height: 1.1; margin-bottom: 30px; animation: ldPulse 1.5s infinite alternate;">DEPOULE'S<br>TOWER DEFENSE</div>
+       <div style="color: var(--muted); letter-spacing: 4px; font-size: 1rem; margin-bottom: 40px; text-transform: uppercase;">The ultimate battle against cubes.</div>
+       <button class="spin-btn" style="max-width: 320px; margin: 0 auto; background: linear-gradient(90deg, #001a33, #004488, #001a33); border: 2px solid #44aaff; box-shadow: 0 0 30px rgba(68,170,255,0.4);" onclick="showTDLevels()">⚔️ Start</button>
+    </div>
+
+    <div id="td-level-container" style="display:none">
+    <div class="slots-card" style="border-color:rgba(0,120,255,.3);box-shadow:0 0 30px rgba(0,120,255,.1);padding:22px 18px">
+      <div class="flip-title" style="color:#44aaff;margin-bottom:4px">🏰 TOWER DEFENSE 2.0</div>
+      <div style="text-align:center;color:var(--muted);font-size:.82rem;margin-bottom:12px">Defend the base. Beat enemies. Earn bottlecaps.</div>
+      
+      <div class="td-gm-select">
+        <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px;width:100%;text-align:center">SELECT GAMEMODE</div>
+        <button class="diff-btn active" id="td-gm-normal" onclick="setTDMode('normal')">Normal</button>
+        <button class="diff-btn" id="td-gm-hardcore" onclick="setTDMode('hardcore')" title="1 Life, 1.5x Rewards">💀 Hardcore</button>
+        <button class="diff-btn" id="td-gm-sandbox" onclick="setTDMode('sandbox')" title="Unlimited Gold, No Rewards">🛠 Sandbox</button>
+      </div>
+
+      <div style="text-align:center;margin-bottom:18px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap">
+        <button class="tlink" id="td-2x-btn" onclick="toggleTD2xSpeed()" style="font-size:.7rem;padding:4px 10px">⚡ 2x Speed Off</button>
+        <button class="tlink" id="td-auto-btn" onclick="toggleTDAutoplay()" style="font-size:.7rem;padding:4px 10px">🤖 Autoplay Off</button>
+      </div>
+      <div class="td-level-select" id="td-level-select">
+        <div class="td-ls-ttl">SELECT MAP</div>
+        <div class="td-ls-sub">Multiple maps · increasing difficulty · real rewards</div>
+        <div class="td-lv-card td-lv1" onclick="startTD(0)">
+          <div class="td-lv-icon">🛤️</div>
+          <div class="td-lv-info">
+            <div class="td-lv-name">The Approach</div>
+            <div class="td-lv-desc">5 waves. OverControl and Random Persons. A warm-up if you're decent.</div>
+            <div class="td-lv-reward">Reward: +150 🧢 on clear</div>
+          </div>
+        </div>
+        <div class="td-lv-card td-lv2" onclick="startTD(1)">
+          <div class="td-lv-icon">⚔️</div>
+          <div class="td-lv-info">
+            <div class="td-lv-name">Gavin's Gauntlet</div>
+            <div class="td-lv-desc">8 waves. ben, liam and Doodlehoney2018 start showing up. Gets fast.</div>
+            <div class="td-lv-reward">Reward: +400 🧢 on clear</div>
+          </div>
+        </div>
+        <div class="td-lv-card td-lv3" onclick="startTD(2)">
+          <div class="td-lv-icon">💀</div>
+          <div class="td-lv-info">
+            <div class="td-lv-name">YIKE Invasion</div>
+            <div class="td-lv-desc">12 waves. Every enemy type. YIKE bosses. Doodlehoney2018 final boss.</div>
+            <div class="td-lv-reward">Reward: +1000 🧢 on clear</div>
+          </div>
+        </div>
+        <div class="td-lv-card td-lv1" onclick="startTD(4)" style="background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.3)">
+          <div class="td-lv-icon">🌀</div>
+          <div class="td-lv-info">
+            <div class="td-lv-name">The Spiral</div>
+            <div class="td-lv-desc">Long winding path. Perfect for snipers and long-range strategies.</div>
+            <div class="td-lv-reward">Reward: +600 🧢 on clear</div>
+          </div>
+        </div>
+        <div class="td-lv-card td-lv-endless" onclick="startTD(3)" style="border:2px solid rgba(200,0,0,.5);margin-bottom:14px">
+          <div class="td-lv-icon" style="font-size:2.8rem">♾️</div>
+          <div class="td-lv-info">
+            <div class="td-lv-name">ENDLESS MODE</div>
+            <div class="td-lv-desc">Waves never stop. Enemies gain +5% HP every wave. Survive as long as you can.</div>
+            <div class="td-lv-reward" style="color:#ff6666">+10 🧢 per wave survived · No finish · Only death</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- ENDLESS WAVE BADGE -->
+  <div id="td-endless-badge">♾️ ENDLESS · WAVE <span id="td-endless-wave-num">1</span></div>
+
+  <!-- TD MODAL (fullscreen game) -->
+  <div id="td-modal">
+    <div class="td-main-layout">
+      <div class="td-canvas-wrap">
+        <canvas id="td-canvas" width="760" height="380"></canvas>
+        <div class="td-log" id="td-log" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width: 80%; background:rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 20px; pointer-events:none; z-index:20;">Click a tower above, then click the map to place it.</div>
+        <div id="td-result-overlay" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:100;border-radius:0">
+          <div id="td-result-msg" style="font-family:'Bebas Neue',cursive;font-size:3rem;letter-spacing:6px;color:#fff"></div>
+          <div id="td-result-sub" style="color:rgba(255,255,255,.5);letter-spacing:2px;font-size:.9rem"></div>
+          <div style="display:flex;gap:10px;margin-top:8px">
+            <button onclick="tdRetry()" style="padding:10px 22px;border:1px solid rgba(68,170,255,.4);border-radius:6px;background:rgba(0,100,200,.15);color:#44aaff;font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;cursor:pointer">↺ RETRY</button>
+            <button onclick="closeTD()" style="padding:10px 22px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.4);font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;cursor:pointer">⬅ LEVELS</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="td-sidebar">
+        <div class="td-sidebar-section">
+          <div class="td-sidebar-title">COMMAND CENTER</div>
+          <div class="td-stat-row">
+            <div class="td-stat"><div class="td-stat-val hp" id="td-hp">20</div><div class="td-stat-lbl">❤️ Lives</div></div>
+            <div class="td-stat"><div class="td-stat-val gold" id="td-gold">100</div><div class="td-stat-lbl">🧢 Gold</div></div>
+            <div class="td-stat"><div class="td-stat-val wave" id="td-wave">0</div><div class="td-stat-lbl">🌊 Wave</div></div>
+            <div class="td-stat"><div class="td-stat-val" id="td-kills" style="color:#00e676">0</div><div class="td-stat-lbl">💀 Kills</div></div>
+          </div>
+          <button class="td-wave-btn" id="td-wave-btn" onclick="tdStartWave()" style="width:100%">▶ SEND WAVE</button>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px">
+            <button class="tlink" id="sidebar-2x-btn" onclick="toggleTD2xSpeed()" style="font-size:.65rem; padding:6px">⚡ 2x OFF</button>
+            <button class="tlink" id="sidebar-auto-btn" onclick="toggleTDAutoplay()" style="font-size:.65rem; padding:6px">🤖 AUTO OFF</button>
+          </div>
+        </div>
+
+        <div class="td-sidebar-section">
+          <div class="td-sidebar-title">AUDIO</div>
+          <div style="display:flex; flex-direction:column; gap:4px">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:.7rem; color:var(--muted)">
+              <span>Music Volume</span>
+              <button id="td-mute-btn" onclick="toggleTDMute()" style="background:none; border:1px solid rgba(255,255,255,0.15); border-radius:4px; color:var(--muted); font-size:0.6rem; cursor:pointer; padding:2px 6px; transition: .15s;">MUTE</button>
+              <span id="td-vol-val">50%</span>
+            </div>
+            <input type="range" id="td-vol-slider" min="0" max="100" value="50" style="width:100%; cursor:pointer" oninput="updateTDVolume(this.value)">
+          </div>
+        </div>
+
+        <div class="td-sidebar-section">
+          <div class="td-sidebar-title">ARSENAL</div>
+          <div class="td-towers-bar" id="td-towers-bar">
+            <div class="td-tower-btn" id="tbt-finn" onclick="tdSelectTower('finn')">
+              <div class="td-tower-icon">🎯</div><div class="td-tower-name">Finn</div><div class="td-tower-cost">50🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-gavin" onclick="tdSelectTower('gavin')">
+              <div class="td-tower-icon">⚡</div><div class="td-tower-name">Gavin</div><div class="td-tower-cost">120🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-alice" onclick="tdSelectTower('alice')">
+              <div class="td-tower-icon">🔭</div><div class="td-tower-name">Alice</div><div class="td-tower-cost">175🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-random" onclick="tdSelectTower('random')">
+              <div class="td-tower-icon">💰</div><div class="td-tower-name">Random</div><div class="td-tower-cost">80🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-peter" onclick="tdSelectTower('peter')">
+              <div class="td-tower-icon">💀</div><div class="td-tower-name">Peter</div><div class="td-tower-cost">600🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-liam" onclick="tdSelectTower('liam')">
+              <div class="td-tower-icon">🐢</div><div class="td-tower-name">liam</div><div class="td-tower-cost">400🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-ben" onclick="tdSelectTower('ben')">
+              <div class="td-tower-icon">🧪</div><div class="td-tower-name">ben</div><div class="td-tower-cost">225🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-yike" onclick="tdSelectTower('yike')">
+              <div class="td-tower-icon">🔱</div><div class="td-tower-name">YIKE</div><div class="td-tower-cost">350🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-shredder" onclick="tdSelectTower('shredder')">
+              <div class="td-tower-icon">🚜</div><div class="td-tower-name">Shredder</div><div class="td-tower-cost">550🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-icespiker" onclick="tdSelectTower('icespiker')">
+              <div class="td-tower-icon">❄️</div><div class="td-tower-name">Ice Spiker</div><div class="td-tower-cost">300🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-banker" onclick="tdSelectTower('banker')">
+              <div class="td-tower-icon">🏦</div><div class="td-tower-name">Banker</div><div class="td-tower-cost">400🧢</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected placed tower panel -->
+        <div id="td-tower-panel" class="td-sidebar-section" style="display:none;">
+          <div class="td-sidebar-title">UPGRADES</div>
+          <div class="td-tp-content">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span id="tdtp-icon" style="font-size:1.8rem"></span>
+              <div>
+                <div style="font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;color:#fff" id="tdtp-name">—</div>
+                <div id="tdtp-stars" style="font-size:.8rem;color:#ffd700;letter-spacing:1px"></div>
+              </div>
+            </div>
+            <div class="td-tp-stats" style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="font-size:.75rem;color:rgba(255,255,255,.4)">DMG: <span id="tdtp-dmg" style="color:#ff8888">—</span></div>
+              <div style="font-size:.75rem;color:rgba(255,255,255,.4)">RNG: <span id="tdtp-range" style="color:#88ccff">—</span></div>
+              <div style="font-size:.75rem;color:rgba(255,255,255,.4);grid-column:span 2">RATE: <span id="tdtp-rate" style="color:#88ff88">—</span></div>
+            </div>
+            <div class="td-tp-btns" style="display:flex; flex-direction:column; gap:8px;">
+              <button id="tdtp-upgrade-btn" onclick="tdUpgradeSelected()"
+                style="padding:10px;border-radius:8px;background:rgba(0,180,80,.15);border:1px solid rgba(0,180,80,.35);color:#00e676;font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;cursor:pointer;transition:.15s">
+                ⬆ UPGRADE<br><span id="tdtp-upgrade-cost" style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:#ffd700"></span>
+              </button>
+              <button id="tdtp-sell-btn" onclick="tdSellSelected()"
+                style="padding:10px;border-radius:8px;background:rgba(255,100,0,.12);border:1px solid rgba(255,100,0,.3);color:#ff8844;font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:2px;cursor:pointer;transition:.15s">
+                💸 SELL<br><span id="tdtp-sell-refund" style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#ffd700"></span>
+              </button>
+              <button onclick="tdDeselectTower()"
+                style="padding:8px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.4);font-family:'Bebas Neue',cursive;font-size:.9rem;cursor:pointer">
+                ✕ DESELECT
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:auto">
+          <button class="td-close-btn" onclick="closeTD()" style="width:100%">✕ QUIT MISSION</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- GD MODAL (fullscreen game) -->
   <div id="gd-modal">
+    <div class="gd-progress-bar"><div class="gd-prog-fill" id="gd-prog-fill"></div></div>
     <div id="gd-ui">
       <div class="gd-info">
         <div class="gd-level-name" id="gd-modal-name">—</div>
@@ -718,18 +1041,17 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
       </div>
       <button class="gd-close" onclick="closeGD()">✕ QUIT</button>
     </div>
-    <div class="gd-progress-bar"><div class="gd-prog-fill" id="gd-prog-fill"></div></div>
-    <div style="position:relative; width:100vw; height:100vh;">
+    <div style="position:relative">
       <canvas id="gd-canvas"></canvas>
-      <div class="gd-overlay" id="gd-overlay">
-        <div class="gd-big-msg" id="gd-big-msg"></div>
-        <div style="display:flex;gap:10px;margin-top:12px;pointer-events:none;opacity:0;transition:opacity .3s" id="gd-restart-btns">
-          <button onclick="restartGD()" style="padding:8px 20px;border:1px solid rgba(0,230,118,.4);border-radius:6px;background:rgba(0,200,80,.1);color:#00e676;font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;cursor:pointer">↺ RETRY</button>
-          <button onclick="closeGD()" style="padding:8px 20px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;cursor:pointer">⬅ LEVELS</button>
-        </div>
+    <div class="gd-overlay" id="gd-overlay">
+      <div class="gd-big-msg" id="gd-big-msg"></div>
+      <div style="display:flex;gap:10px;margin-top:12px;pointer-events:auto;opacity:0;transition:opacity .3s .2s" id="gd-restart-btns">
+        <button onclick="restartGD()" style="padding:8px 20px;border:1px solid rgba(0,230,118,.4);border-radius:6px;background:rgba(0,200,80,.1);color:#00e676;font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;cursor:pointer">↺ RETRY</button>
+        <button onclick="closeGD()" style="padding:8px 20px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;cursor:pointer">⬅ LEVELS</button>
       </div>
+        <div style="position:absolute;bottom:30px;color:rgba(255,255,255,.2);font-size:.75rem;letter-spacing:2px">CLICK / SPACE / TAP TO JUMP</div>
     </div>
-    <div style="margin-top:10px;color:rgba(255,255,255,.25);font-size:.75rem;letter-spacing:2px">CLICK / SPACE / TAP TO JUMP</div>
+    </div>
   </div>
 
 </div>
@@ -754,20 +1076,27 @@ async function init(){
   UC=await dbGetUser(u);
   if(!UC){document.getElementById('not-logged').style.display='block';return;}
   document.getElementById('casino-app').style.display='block';
-  refreshBal();initReels();initPlinkoBoard();
-  
-  const params = new URLSearchParams(window.location.search);
-  if (params.has('gd')) {
-    const lvl = parseInt(params.get('level')) || 0;
+  refreshBal();
+  initReels();
+  initPlinkoBoard();
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('gd')) {
+    const l = parseInt(urlParams.get('level')) || 0;
     switchGame('gd');
-    startGD(lvl);
-    // Clean URL so manual refresh doesn't loop
-    window.history.replaceState({}, document.title, window.location.pathname);
+    setTimeout(() => startGD(l), 500);
   }
 }
 function refreshBal(){const c=UC?UC.coins||0:0;['top-coins','slots-bal','flip-bal','roulette-bal','dice-bal','chess-bal','hl-bal','crash-bal','plinko-bal'].forEach(id=>{const el=$(id);if(el)el.textContent=c;});}
 async function saveCoins(){if(!UC||!FB_READY)return;await dbUpdateUser(getU(),{coins:UC.coins});refreshBal();flashBody();}
-function switchGame(id){document.querySelectorAll('.gtab').forEach(t=>t.classList.remove('on'));document.querySelectorAll('.game-section').forEach(s=>s.classList.remove('on'));document.querySelector(`.gtab[onclick*="${id}"]`).classList.add('on');document.getElementById('game-'+id).classList.add('on'); if(id==='mega')renderMega();}
+function switchGame(id){
+  document.querySelectorAll('.gtab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.game-section').forEach(s=>s.classList.remove('on'));
+  const targetTab = document.querySelector(`.gtab[onclick*="${id}"]`);
+  if(targetTab) targetTab.classList.add('on');
+  document.getElementById('game-'+id).classList.add('on'); 
+  if(id==='mega')renderMega();
+  if(id==='td') showTDTitle(); else stopTDMusic();
+}
 
 // ═══ SLOTS (existing) ═══
 const RSYMS=['🍒','🍒','🍒','🍋','🍋','🔔','⭐','7️⃣','💎'];
@@ -871,10 +1200,52 @@ init();
 /* ═══════════════════════════════════════════════
    GEOMETRY DASH CLONE — 3 levels, no rewards
 ═══════════════════════════════════════════════ */
-const GD_BESTS = [0, 0, 0]; // best % per level
-const GD_ATTEMPTS = [0, 0, 0];
-let _gdResTimeout = null;
+const GD_BESTS = [0, 0, 0, 0, 0, 0, 0, 0];
+const GD_ATTEMPTS = [0, 0, 0, 0, 0, 0, 0, 0];
 let gdGame = null;
+
+window._tdFullscreen = false;
+window._td2xSpeed = false;
+window._tdAutoplay = localStorage.getItem('td_autoplay') === 'true';
+
+function updateTDButtons() {
+  const fsBtn = $('td-fs-btn'); if(fsBtn) fsBtn.textContent = window._tdFullscreen ? "⛶ Fullscreen On" : "⛶ Fullscreen Off";
+  
+  const speedBtn = $('td-2x-btn'), s2x = $('sidebar-2x-btn'); 
+  if(speedBtn) {
+    speedBtn.textContent = window._td2xSpeed ? "⚡ 2x Speed On" : "⚡ 2x Speed Off";
+    speedBtn.style.borderColor = window._td2xSpeed ? "var(--ok)" : "";
+  }
+  if(s2x) {
+    s2x.textContent = window._td2xSpeed ? "⚡ 2x ON" : "⚡ 2x OFF";
+    s2x.style.borderColor = window._td2xSpeed ? "var(--ok)" : "";
+  }
+
+  const autoBtn = $('td-auto-btn'), sAuto = $('sidebar-auto-btn');
+  if(autoBtn) {
+    autoBtn.textContent = window._tdAutoplay ? "🤖 Autoplay On" : "🤖 Autoplay Off";
+    autoBtn.style.borderColor = window._tdAutoplay ? "var(--ok)" : "";
+  }
+  if(sAuto) {
+    sAuto.textContent = window._tdAutoplay ? "🤖 AUTO ON" : "🤖 AUTO OFF";
+    sAuto.style.borderColor = window._tdAutoplay ? "var(--ok)" : "";
+  }
+}
+
+async function toggleTDFullscreen() { window._tdFullscreen = !window._tdFullscreen; updateTDButtons(); showT(window._tdFullscreen ? "Fullscreen enabled" : "Fullscreen disabled"); }
+function toggleTD2xSpeed() { window._td2xSpeed = !window._td2xSpeed; updateTDButtons(); showT(window._td2xSpeed ? "2x Speed On" : "2x Speed Off"); }
+function toggleTDAutoplay() { window._tdAutoplay = !window._tdAutoplay; localStorage.setItem('td_autoplay', window._tdAutoplay); updateTDButtons(); showT(window._tdAutoplay ? "Autoplay On" : "Autoplay Off"); }
+
+function enterFullscreen(el) {
+  if (el.requestFullscreen) el.requestFullscreen();
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  else if (el.msRequestFullscreen) el.msRequestFullscreen();
+}
+function exitFullscreen() {
+  if (document.exitFullscreen) document.exitFullscreen();
+  else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  else if (document.msExitFullscreen) document.msExitFullscreen();
+}
 
 const GD_LEVELS = [
   {
@@ -993,38 +1364,119 @@ const GD_LEVELS = [
       {t:'run', len:100},
     ],
     totalLen: 5000
+  },
+  {
+    name: "Neon Rush",
+    bgGrad: ['#001a0d','#00331a','#001008'],
+    playerColor: '#00ff88',
+    playerGlow: 'rgba(0,255,136,.7)',
+    floorColor: '#006644',
+    ceilColor: '#004433',
+    blockColors: ['#00cc66','#00aa55','#00ff77'],
+    progColor: '#00ff88',
+    speed: 5.8,
+    segments: [
+      {t:'run', len:140},{t:'spikes', count:2, gap:180},{t:'block', h:85, gap:175},{t:'run', len:80},{t:'double', gap:220},
+      {t:'spikes', count:4, gap:160},{t:'run', len:60},{t:'block', h:95, gap:168},{t:'spikes', count:3, gap:165},{t:'run', len:70},
+      {t:'double', gap:210},{t:'spikes', count:5, gap:148},{t:'block', h:90, gap:163},{t:'run', len:50},{t:'spikes', count:4, gap:155},
+      {t:'double', gap:205},{t:'run', len:60},{t:'block', h:100, gap:160},{t:'spikes', count:3, gap:158},{t:'run', len:80}
+    ],
+    totalLen: 4200
+  },
+  {
+    name: "Inferno",
+    bgGrad: ['#1a0600','#330c00','#140400'],
+    playerColor: '#ff6600',
+    playerGlow: 'rgba(255,100,0,.8)',
+    floorColor: '#663300',
+    ceilColor: '#442200',
+    blockColors: ['#cc5500','#aa4400','#ff7700'],
+    progColor: '#ff6600',
+    speed: 7.5,
+    segments: [
+      {t:'run', len:80},{t:'spikes', count:4, gap:145},{t:'block', h:90, gap:160},{t:'double', gap:195},{t:'spikes', count:5, gap:135},
+      {t:'run', len:40},{t:'block', h:95, gap:155},{t:'spikes', count:4, gap:140},{t:'triple', gap:270},{t:'run', len:30},
+      {t:'spikes', count:6, gap:128},{t:'block', h:100, gap:150},{t:'spikes', count:5, gap:133},{t:'double', gap:188},{t:'run', len:35},
+      {t:'block', h:85, gap:158},{t:'spikes', count:4, gap:138},{t:'run', len:40},{t:'triple', gap:265},{t:'spikes', count:5, gap:130},{t:'run', len:50}
+    ],
+    totalLen: 5500
+  },
+  {
+    name: "Crystal Caverns",
+    bgGrad: ['#00140a','#002814','#000a05'],
+    playerColor: '#00ffcc',
+    playerGlow: 'rgba(0,255,204,.7)',
+    floorColor: '#004d66',
+    ceilColor: '#003344',
+    blockColors: ['#0088aa','#006688','#00aacc'],
+    progColor: '#00ffcc',
+    speed: 6.2,
+    segments: [
+      {t:'run', len:120},{t:'spikes', count:3, gap:165},{t:'block', h:85, gap:172},{t:'run', len:70},{t:'double', gap:215},
+      {t:'spikes', count:4, gap:153},{t:'block', h:92, gap:166},{t:'run', len:60},{t:'spikes', count:5, gap:145},{t:'double', gap:205},
+      {t:'run', len:50},{t:'block', h:98, gap:160},{t:'spikes', count:4, gap:150},{t:'triple', gap:275},{t:'run', len:45},
+      {t:'spikes', count:6, gap:138},{t:'block', h:90, gap:164},{t:'run', len:60},{t:'double', gap:200},{t:'spikes', count:4, gap:148},{t:'run', len:70}
+    ],
+    totalLen: 4800
+  },
+  {
+    name: "Demon's Lair",
+    bgGrad: ['#140000','#280000','#0a0000'],
+    playerColor: '#ff0044',
+    playerGlow: 'rgba(255,0,68,.9)',
+    floorColor: '#550022',
+    ceilColor: '#330011',
+    blockColors: ['#aa0033','#880022','#cc0044'],
+    progColor: '#ff0044',
+    speed: 8.5,
+    segments: [
+      {t:'run', len:60},{t:'spikes', count:5, gap:132},{t:'block', h:95, gap:152},{t:'double', gap:185},{t:'spikes', count:6, gap:125},
+      {t:'run', len:30},{t:'block', h:100, gap:148},{t:'spikes', count:5, gap:130},{t:'triple', gap:260},{t:'spikes', count:7, gap:118},
+      {t:'run', len:25},{t:'block', h:90, gap:155},{t:'double', gap:182},{t:'spikes', count:6, gap:123},{t:'block', h:95, gap:150},
+      {t:'triple', gap:255},{t:'run', len:30},{t:'spikes', count:8, gap:115},{t:'block', h:100, gap:145},{t:'spikes', count:6, gap:120},
+      {t:'double', gap:180},{t:'run', len:40}
+    ],
+    totalLen: 6000
+  },
+  {
+    name: "Toxic Wasteland",
+    bgGrad: ['#0a140a','#142814','#050a05'],
+    playerColor: '#88ff00',
+    playerGlow: 'rgba(136,255,0,.8)',
+    floorColor: '#446600',
+    ceilColor: '#334400',
+    blockColors: ['#66aa00','#558800','#77cc00'],
+    progColor: '#88ff00',
+    speed: 6.8,
+    segments: [
+      {t:'run', len:100},{t:'spikes', count:4, gap:155},{t:'block', h:88, gap:168},{t:'run', len:65},{t:'double', gap:208},
+      {t:'spikes', count:5, gap:143},{t:'block', h:94, gap:162},{t:'run', len:55},{t:'spikes', count:4, gap:150},{t:'triple', gap:268},
+      {t:'run', len:45},{t:'block', h:92, gap:165},{t:'spikes', count:6, gap:135},{t:'double', gap:198},{t:'run', len:50},
+      {t:'spikes', count:5, gap:140},{t:'block', h:96, gap:158},{t:'run', len:60},{t:'triple', gap:262},{t:'spikes', count:4, gap:145},{t:'run', len:70}
+    ],
+    totalLen: 5200
   }
 ];
 
 function startGD(levelIdx) {
-  GD_ATTEMPTS[levelIdx]++;
+  GD_ATTEMPTS[levelIdx] = (GD_ATTEMPTS[levelIdx] || 0) + 1;
   const lvl = GD_LEVELS[levelIdx];
   const canvas = $('gd-canvas');
   const modal = $('gd-modal');
 
-  if (gdGame) gdGame.destroy();
-  if (_gdResTimeout) clearTimeout(_gdResTimeout);
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  const url = new URL(window.location);
+  url.searchParams.set('gd', '');
+  url.searchParams.set('level', levelIdx);
+  window.history.replaceState({}, '', url);
 
   $('gd-modal-name').textContent = lvl.name;
   $('gd-prog-fill').style.background = lvl.progColor;
   $('gd-attempts-display').textContent = 'Attempt ' + GD_ATTEMPTS[levelIdx];
 
-  $('gd-ui').style.opacity = '1';
-  // Force UI cleanup immediately to prevent transition delay during retry
-  const msg = $('gd-big-msg'), btns = $('gd-restart-btns');
-  msg.style.transition = 'none';
-  btns.style.transition = 'none';
-
-  msg.textContent = '';
-  msg.className = 'gd-big-msg';
-  btns.style.opacity = '0';
-  btns.style.pointerEvents = 'none';
-
-  void btns.offsetWidth; // Trigger reflow to apply instant styles
-  msg.style.transition = '';
-  btns.style.transition = '';
+  $('gd-big-msg').textContent = '';
+  $('gd-big-msg').className = 'gd-big-msg';
+  $('gd-restart-btns').style.opacity = '0';
+  $('gd-restart-btns').style.pointerEvents = 'none';
 
   modal.classList.add('open');
 
@@ -1035,13 +1487,46 @@ function startGD(levelIdx) {
 function restartGD() {
   if (!gdGame) return;
   const idx = gdGame.levelIdx;
-  // Perform a hard refresh to clear all zombie states and timeouts
-  window.location.href = `index.html?gd&level=${idx}`;
+  gdGame.destroy();
+  gdGame = null;
+
+  // Fully remove then reload the GUI and Canvas HTML structure
+  const modal = $('gd-modal');
+  modal.innerHTML = `
+    <div class="gd-progress-bar"><div class="gd-prog-fill" id="gd-prog-fill"></div></div>
+    <div id="gd-ui">
+      <div class="gd-info">
+        <div class="gd-level-name" id="gd-modal-name">—</div>
+        <div class="gd-pct" id="gd-pct-display">0%</div>
+      </div>
+      <div class="gd-info">
+        <div class="gd-attempts" id="gd-attempts-display">Attempt 1</div>
+      </div>
+      <button class="gd-close" onclick="closeGD()">✕ QUIT</button>
+    </div>
+    <div style="position:relative">
+      <canvas id="gd-canvas"></canvas>
+      <div class="gd-overlay" id="gd-overlay">
+        <div class="gd-big-msg" id="gd-big-msg"></div>
+        <div style="display:flex;gap:10px;margin-top:12px;pointer-events:auto;opacity:0;transition:opacity .3s .2s" id="gd-restart-btns">
+          <button onclick="restartGD()" style="padding:8px 20px;border:1px solid rgba(0,230,118,.4);border-radius:6px;background:rgba(0,200,80,.1);color:#00e676;font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;cursor:pointer">↺ RETRY</button>
+          <button onclick="closeGD()" style="padding:8px 20px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:2px;cursor:pointer">⬅ LEVELS</button>
+        </div>
+        <div style="position:absolute;bottom:30px;color:rgba(255,255,255,.2);font-size:.75rem;letter-spacing:2px">CLICK / SPACE / TAP TO JUMP</div>
+      </div>
+    </div>
+  `;
+
+  startGD(idx);
 }
 
 function closeGD() {
   if (gdGame) { gdGame.destroy(); gdGame = null; }
   $('gd-modal').classList.remove('open');
+  const url = new URL(window.location);
+  url.searchParams.delete('gd');
+  url.searchParams.delete('level');
+  window.history.replaceState({}, '', url);
   // update best displays
   GD_LEVELS.forEach((_, i) => {
     const el = $('gd-best-' + i);
@@ -1051,55 +1536,63 @@ function closeGD() {
 
 function buildGDGame(canvas, lvl, levelIdx) {
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  
-  // Scaling logic: Base height is 600px.
-  const scale = Math.max(0.5, H / 600); 
-  
-  const FLOOR_Y = H - (100 * scale);
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  ctx.scale(dpr, dpr);
+
+  // Scaled Logical Coordinates: We scale based on height to match the original 260px vertical design
+  const refH = 380;
+  const S = window.innerHeight / refH;
+  ctx.scale(S, S);
+
+  const W = window.innerWidth / S; // Logical width
+  const H = refH;                  // Logical height
+
+  const FLOOR_Y = H - 40;
   const CEIL_Y = 0;
-  const PLAYER_SIZE = 32 * scale;
-  const PLAYER_X = 100 * scale;
-  const GRAVITY = 0.55 * scale;
-  const JUMP_FORCE = -11.5 * scale;
-  const SPEED = lvl.speed * 1.5 * scale;
-  const SPIKE_W = 20 * scale, SPIKE_H = 20 * scale;
-  const BLOCK_W = 38 * scale;
+  const PLAYER_SIZE = 32;
+  const PLAYER_X = 80;
+  const GRAVITY = 0.55;
+  const JUMP_FORCE = -11.5;
+  const SPIKE_W = 20, SPIKE_H = 20;
+  const BLOCK_W = 38;
 
   // Build obstacle list from segments
   const obstacles = [];
-  let cx = W + (100 * scale);
+  let cx = W + 100;
   const segs = lvl.segments;
 
   for (const seg of segs) {
     if (seg.t === 'run') {
-      cx += seg.len * scale;
+      cx += seg.len;
     } else if (seg.t === 'spikes') {
       for (let s = 0; s < seg.count; s++) {
-        obstacles.push({ type: 'spike_floor', x: cx + s * (SPIKE_W + 6 * scale), y: FLOOR_Y - SPIKE_H });
+        obstacles.push({ type: 'spike_floor', x: cx + s * (SPIKE_W + 6), y: FLOOR_Y - SPIKE_H });
       }
-      cx += seg.gap * scale;
+      cx += seg.gap;
     } else if (seg.t === 'block') {
-      obstacles.push({ type: 'block', x: cx, y: FLOOR_Y - (seg.h * scale), w: BLOCK_W, h: seg.h * scale });
-      cx += seg.gap * scale;
+      obstacles.push({ type: 'block', x: cx, y: FLOOR_Y - seg.h, w: BLOCK_W, h: seg.h });
+      cx += seg.gap;
     } else if (seg.t === 'double') {
+      // spike on floor + spike on ceiling = must time jump carefully
       obstacles.push({ type: 'spike_floor', x: cx, y: FLOOR_Y - SPIKE_H });
-      obstacles.push({ type: 'spike_floor', x: cx + (80 * scale), y: FLOOR_Y - SPIKE_H });
-      cx += seg.gap * scale;
+      obstacles.push({ type: 'spike_floor', x: cx + 80, y: FLOOR_Y - SPIKE_H });
+      cx += seg.gap;
     } else if (seg.t === 'triple') {
       obstacles.push({ type: 'spike_floor', x: cx, y: FLOOR_Y - SPIKE_H });
-      obstacles.push({ type: 'spike_floor', x: cx + (60 * scale), y: FLOOR_Y - SPIKE_H });
-      obstacles.push({ type: 'spike_floor', x: cx + (120 * scale), y: FLOOR_Y - SPIKE_H });
-      cx += seg.gap * scale;
+      obstacles.push({ type: 'spike_floor', x: cx + 60, y: FLOOR_Y - SPIKE_H });
+      obstacles.push({ type: 'spike_floor', x: cx + 120, y: FLOOR_Y - SPIKE_H });
+      cx += seg.gap;
     }
   }
 
-  const TOTAL_DIST = cx + (200 * scale);
+  const TOTAL_DIST = cx + 200;
 
   let player = { x: PLAYER_X, y: FLOOR_Y - PLAYER_SIZE, vy: 0, onGround: true, rot: 0, dead: false, won: false };
   let cameraX = 0;
   let bestPct = GD_BESTS[levelIdx];
-  const hud = $('gd-ui'), closeBtn = hud.querySelector('.gd-close');
   let raf = null;
   let alive = true;
   let stars = [];
@@ -1185,7 +1678,7 @@ function buildGDGame(canvas, lvl, levelIdx) {
       ctx.beginPath();
       ctx.moveTo(sx, obs.y + SPIKE_H);
       ctx.lineTo(sx + SPIKE_W / 2, obs.y);
-      ctx.lineTo(sx + SPIKE_W, obs.y + (SPIKE_H));
+      ctx.lineTo(sx + SPIKE_W, obs.y + SPIKE_H);
       ctx.closePath();
       ctx.fill();
       // outline
@@ -1219,7 +1712,7 @@ function buildGDGame(canvas, lvl, levelIdx) {
   }
 
   function drawPlayer() {
-    const px = worldToScreen(player.x);
+    const px = PLAYER_X;
     const py = player.y;
     ctx.save();
     ctx.translate(px + PLAYER_SIZE / 2, py + PLAYER_SIZE / 2);
@@ -1227,13 +1720,14 @@ function buildGDGame(canvas, lvl, levelIdx) {
 
     // glow
     ctx.shadowColor = lvl.playerGlow;
-    ctx.shadowBlur = 18 * scale;
+    ctx.shadowBlur = 18;
 
+    // outer cube
     const grd = ctx.createLinearGradient(-PLAYER_SIZE/2, -PLAYER_SIZE/2, PLAYER_SIZE/2, PLAYER_SIZE/2);
     grd.addColorStop(0, lvl.playerColor);
     grd.addColorStop(1, lvl.blockColors[1]);
     ctx.fillStyle = grd;
-    const r = 4 * scale;
+    const r = 4;
     const s = PLAYER_SIZE / 2;
     ctx.beginPath();
     ctx.moveTo(-s + r, -s);
@@ -1269,8 +1763,8 @@ function buildGDGame(canvas, lvl, levelIdx) {
       ctx.globalAlpha = p.life / p.maxLife;
       ctx.fillStyle = lvl.playerColor;
       ctx.shadowColor = lvl.playerGlow;
-      ctx.shadowBlur = 5 * scale;
-      ctx.fillRect(worldToScreen(p.x), p.y, p.size, p.size);
+      ctx.shadowBlur = 5;
+      ctx.fillRect(p.x - cameraX, p.y, p.size, p.size);
       ctx.globalAlpha = 1;
       ctx.shadowBlur = 0;
     });
@@ -1284,12 +1778,12 @@ function buildGDGame(canvas, lvl, levelIdx) {
   function spawnTrailParticle() {
     if (frame % 3 !== 0) return;
     particles.push({
-      x: player.x + PLAYER_SIZE / 2 - (2 * scale) + (Math.random()-0.5)*(4 * scale),
+      x: player.x + PLAYER_SIZE / 2 + cameraX - 2 + (Math.random()-0.5)*4,
       y: player.y + PLAYER_SIZE / 2 + (Math.random()-0.5)*4,
-      size: (Math.random()*5+2) * scale,
+      size: Math.random()*5+2,
       life: 18,
       maxLife: 18,
-      vx: -(Math.random()*1.5+0.5) * scale,
+      vx: -(Math.random()*1.5+0.5),
       vy: (Math.random()-0.5)*1.5
     });
   }
@@ -1320,15 +1814,6 @@ function buildGDGame(canvas, lvl, levelIdx) {
     drawGrid();
 
     if (gameState === 'playing') {
-      if (hud.style.opacity !== '0') {
-        hud.style.opacity = '0';
-        closeBtn.style.pointerEvents = 'none';
-        // Force center overlay hidden during play
-        $('gd-big-msg').classList.remove('show');
-        $('gd-restart-btns').style.opacity = '0';
-        $('gd-restart-btns').style.pointerEvents = 'none';
-      }
-
       // Physics
       player.vy += GRAVITY;
       player.y += player.vy;
@@ -1345,8 +1830,9 @@ function buildGDGame(canvas, lvl, levelIdx) {
       }
 
       // Camera follows player's world position
-      cameraX += SPEED;
-      player.x = cameraX + PLAYER_X;
+      const targetCamX = player.x + cameraX - PLAYER_X;
+      cameraX += lvl.speed * 1.5;
+      player.x = PLAYER_X; // player stays fixed on screen
 
       // Trail particles
       spawnTrailParticle();
@@ -1358,7 +1844,7 @@ function buildGDGame(canvas, lvl, levelIdx) {
       const playerWorldX = cameraX + PLAYER_X;
 
       // Update player world position for collision
-      // player.x is updated above
+      player.x = playerWorldX - PLAYER_SIZE / 2;
 
       // Collision
       if (checkCollision()) {
@@ -1394,11 +1880,6 @@ function buildGDGame(canvas, lvl, levelIdx) {
     if (gameState !== 'dead') drawPlayer();
 
     if (gameState === 'dead') {
-      if (hud.style.opacity !== '1') {
-        hud.style.opacity = '1';
-        closeBtn.style.pointerEvents = 'auto';
-      }
-
       deathTimer++;
       if (deathTimer > 90) {
         showGDResult(false);
@@ -1430,11 +1911,9 @@ function buildGDGame(canvas, lvl, levelIdx) {
   function showGDResult(won) {
     const msg = $('gd-big-msg');
     const btns = $('gd-restart-btns');
-    hud.style.opacity = '1';
-    closeBtn.style.pointerEvents = 'auto';
     msg.textContent = won ? 'COMPLETE!' : 'DEAD';
     msg.className = 'gd-big-msg show ' + (won ? 'win' : 'death');
-    _gdResTimeout = setTimeout(() => {
+    setTimeout(() => {
       btns.style.opacity = '1';
       btns.style.pointerEvents = 'auto';
     }, 300);
@@ -1452,6 +1931,869 @@ function buildGDGame(canvas, lvl, levelIdx) {
     }
   };
 }
+/* ══════════════════════════════════════════════════════════
+   TOWER DEFENSE ENGINE
+══════════════════════════════════════════════════════════ */
+let tdGame = null;
+let tdLevelIdx = 0;
+
+const TD_LEVELS = [
+  { name:"The Approach",    waves:5,        reward:150,  pathColor:'#8B5E3C', bgColor:'#1a3d1a' },
+  { name:"Gavin's Gauntlet",waves:8,        reward:400,  pathColor:'#7a4a2a', bgColor:'#1a1a2e' },
+  { name:"YIKE Invasion",   waves:12,       reward:1000, pathColor:'#6a3a4a', bgColor:'#0d0014' },
+  { name:"ENDLESS MODE",    waves:Infinity, reward:0,    pathColor:'#5a0000', bgColor:'#0a0000', endless:true }
+];
+
+// ── Endless wave generator ──────────────────────────────────────────────────
+// Returns a wave composition for the given wave number (1-indexed)
+function generateEndlessWave(n) {
+  // Enemy pools unlock progressively
+  const pool = [];
+  if (n >= 1)  pool.push({t:'overcontrol', weight:8});
+  if (n >= 1)  pool.push({t:'random',      weight:7});
+  if (n >= 4)  pool.push({t:'ben',       weight:6});
+  if (n >= 7)  pool.push({t:'liam',       weight:5});
+  if (n >= 10) pool.push({t:'yike',        weight:6});
+  if (n >= 13) pool.push({t:'doodle',      weight:4});
+  if (n >= 16) pool.push({t:'yike_boss',   weight:2});
+  if (n >= 22) pool.push({t:'doodle_boss', weight:1});
+
+  // Total enemies scales with wave
+  const baseCount = 8 + n * 3;
+  const totalCount = Math.min(baseCount, 60);
+  const totalWeight = pool.reduce((s, e) => s + e.weight, 0);
+
+  const comp = {};
+  // Distribute enemies by weight
+  let placed = 0;
+  for (let i = 0; i < pool.length; i++) {
+    const share = Math.max(1, Math.round(totalCount * pool[i].weight / totalWeight));
+    const n2 = (i === pool.length - 1) ? Math.max(1, totalCount - placed) : share;
+    comp[pool[i].t] = (comp[pool[i].t] || 0) + n2;
+    placed += n2;
+    if (placed >= totalCount) break;
+  }
+
+  // Guarantee a boss appearance every 5 waves from wave 10 onwards
+  if (n >= 10 && n % 5 === 0) {
+    comp['yike_boss'] = (comp['yike_boss'] || 0) + Math.floor(n / 10);
+  }
+  if (n >= 22 && n % 10 === 0) {
+    comp['doodle_boss'] = (comp['doodle_boss'] || 0) + 1;
+  }
+
+  return Object.entries(comp).map(([t, num]) => ({t, n: num}));
+}
+
+// Path waypoints — percentage of canvas W/H
+let TD_PATH = [
+  [0, 0.42], [0.18, 0.42], [0.18, 0.18], [0.42, 0.18],
+  [0.42, 0.65], [0.62, 0.65], [0.62, 0.28], [0.82, 0.28],
+  [0.82, 0.75], [1.02, 0.75]
+];
+
+const TOWER_DEFS = {
+  finn:   { name:'Finn',   icon:'🎯', cost:50,  range:100, dmg:100,  rate:2.5, color:'#66dd44', proj:'arrow',  splash:false, desc:'Starter. Cheap and reliable.' },
+  gavin:  { name:'Gavin',  icon:'⚡', cost:250, range:80,  dmg:5,  rate:12000.0, color:'#ff8800', proj:'laser',  splash:false, desc:'Rapid fire. Low dmg but relentless.', limit:1 },
+  alice:  { name:'Alice',  icon:'👀', cost:175, range:676767,dmg:250,  rate:0.6,color:'#44aaff', proj:'sniper', splash:false, desc:'Infinite range. Hits hard. Very slow.' },
+  random: { name:'Random', icon:'💰', cost:175,  range:5,   dmg:20000,   rate:0,   color:'#ffcc44', proj:'none',   splash:false, desc:'No damage. Gives +40🧢/wave. LIMIT 1.', moneyPerWave:500 },
+  peter:  { name:'Peter',  icon:'💀', cost:3000, range:148, dmg:210, rate:1.0, color:'#ff2244', proj:'bomb',   splash:true,  splashR:65, desc:'Very expensive. Very powerful.' },
+  shredder: { name:'Armor Shredder', icon:'🚜', cost:550, range:130, dmg:900, rate:0.4, color:'#aa66ff', proj:'laser', desc:'Slow but heavy. Shreds high-HP targets.' },
+  icespiker: { name:'Frost Spiker', icon:'❄️', cost:300, range:140, dmg:5, rate:1.2, color:'#00ffff', proj:'arrow', slow: 3.5, desc:'Utility tower. Heavily slows enemies in range.' },
+  banker: { name:'Money Maker', icon:'🏦', cost:400, range:10, dmg:0, rate:0, color:'#00ff00', proj:'none', desc:'Non-combat. Prints money every wave.', moneyPerWave: 150 }
+};
+
+// Upgrade costs per level [lvl1, lvl2] and stat boosts per level
+const TOWER_UPGRADES = {
+  finn:   { costs:[75, 100],   dmgBonus:-12.5, rangeBonus:12.5,  rateBonus:1.25, desc:['Better arrows','Elite marksman'] },
+  gavin:  { costs:[900, 1800],  dmgBonus:12.5,  rangeBonus:0,  rateBonus:240000.5,  desc:['Turbo fire','Machine mode'] },
+  alice:  { costs:[130, 260], dmgBonus:250, rangeBonus:0,  rateBonus:0.2, desc:['Hollow points','Anti-boss rounds'] },
+  random: { costs:[250, 500],  dmgBonus:0,  rangeBonus:0,  rateBonus:0,    moneyBonus:250, desc:['Better hustle','+more hustle'] },
+  peter:  { costs:[6000, 8000], dmgBonus:1000,rangeBonus:180, rateBonus:16,  desc:['Overclocked','God mode'] },
+  shredder: { costs:[800, 1500], dmgBonus:1200, rangeBonus:20, rateBonus:0.1, desc:['Tungsten rounds','Hyper-velocity'] },
+  icespiker: { costs:[400, 900], dmgBonus:10, rangeBonus:40, rateBonus:0.3, desc:['Deep freeze','Absolute zero'] },
+  banker: { costs:[600, 1200], dmgBonus:0, rangeBonus:0, rateBonus:0, moneyBonus: 300, desc:['Interest rates','Stock market'] }
+};
+
+// Enemy types
+const ENEMY_TYPES = {
+  overcontrol:  { name:'OverControl',    icon:'⬜', color:'#cccccc', hp:60,  spd:1.2, reward:8,  size:14, boss:false },
+  random:       { name:'Random Person',  icon:'👤', color:'#8888aa', hp:40,  spd:1.5, reward:5,  size:12, boss:false },
+  ben:        { name:'ben',          icon:'🟢', color:'#44cc44', hp:110, spd:1.4, reward:12, size:15, boss:false },
+  liam:        { name:'liam',          icon:'🟤', color:'#cc8844', hp:160, spd:1.0, reward:15, size:16, boss:false },
+  doodle:       { name:'Doodlehoney',    icon:'💜', color:'#aa44ff', hp:260, spd:0.9, reward:22, size:18, boss:false },
+  yike:         { name:'YIKE',           icon:'🟡', color:'#ffdd00', hp:180, spd:2.0, reward:18, size:14, boss:false },
+  doodle_boss:  { name:'DOODLE BOSS',    icon:'💜', color:'#cc00ff', hp:1200,spd:0.6, reward:100,size:26, boss:true  },
+  yike_boss:    { name:'YIKE BOSS',      icon:'🟡', color:'#ffaa00', hp:800, spd:1.5, reward:60, size:22, boss:true  }
+};
+
+// Wave compositions per level
+const WAVE_SPAWNS = {
+  0: [ // The Approach — 5 waves
+    [{t:'overcontrol',n:6}],
+    [{t:'random',n:8}],
+    [{t:'overcontrol',n:8},{t:'random',n:4}],
+    [{t:'random',n:10},{t:'overcontrol',n:5}],
+    [{t:'overcontrol',n:10},{t:'random',n:8},{t:'ben',n:2}]
+  ],
+  1: [ // Gavin's Gauntlet — 8 waves
+    [{t:'overcontrol',n:8},{t:'random',n:6}],
+    [{t:'ben',n:5},{t:'random',n:8}],
+    [{t:'liam',n:4},{t:'ben',n:6}],
+    [{t:'doodle',n:3},{t:'overcontrol',n:10}],
+    [{t:'liam',n:6},{t:'ben',n:8}],
+    [{t:'yike',n:8},{t:'random',n:6}],
+    [{t:'doodle',n:5},{t:'liam',n:5},{t:'yike',n:5}],
+    [{t:'yike_boss',n:1},{t:'doodle',n:4},{t:'liam',n:6},{t:'ben',n:8}]
+  ],
+  2: [ // YIKE Invasion — 12 waves
+    [{t:'overcontrol',n:12},{t:'random',n:10}],
+    [{t:'ben',n:10},{t:'yike',n:6}],
+    [{t:'liam',n:8},{t:'doodle',n:4}],
+    [{t:'yike',n:12},{t:'ben',n:8}],
+    [{t:'doodle',n:6},{t:'liam',n:8},{t:'random',n:10}],
+    [{t:'yike_boss',n:1},{t:'yike',n:10}],
+    [{t:'doodle',n:8},{t:'liam',n:8},{t:'yike',n:8}],
+    [{t:'yike_boss',n:2},{t:'doodle',n:6},{t:'ben',n:10}],
+    [{t:'doodle',n:10},{t:'liam',n:10},{t:'yike',n:12}],
+    [{t:'yike_boss',n:2},{t:'doodle',n:8},{t:'liam',n:8}],
+    [{t:'doodle',n:12},{t:'yike_boss',n:2},{t:'yike',n:15}],
+    "ENDLESS" // Endless mode - waves generate infinitely
+  ]
+};
+
+function showTDTitle() {
+  $('td-title-screen').style.display = 'block';
+  $('td-level-container').style.display = 'none';
+  if (!window._tdTitleMusic) {
+    window._tdTitleMusic = new Audio('title.mp3');
+    window._tdTitleMusic.loop = true;
+  }
+  window._tdTitleMusic.volume = window._tdVolume !== undefined ? window._tdVolume : 0.5;
+  window._tdTitleMusic.play().catch(e => console.log("Audio blocked - interaction required"));
+}
+function showTDLevels() {
+  $('td-title-screen').style.display = 'none';
+  $('td-level-container').style.display = 'block';
+}
+function stopTDMusic() { 
+  if(window._tdTitleMusic){window._tdTitleMusic.pause(); window._tdTitleMusic.currentTime=0;} 
+  if(window._tdBgMusic){window._tdBgMusic.pause(); window._tdBgMusic.currentTime=0;}
+}
+
+window._tdVolume = 0.5;
+window._tdMuted = false;
+window._tdPreMuteVol = 0.5;
+
+function updateTDVolume(val) {
+  const v = val / 100;
+  window._tdVolume = v;
+  if (window._tdBgMusic) window._tdBgMusic.volume = v;
+  if (window._tdTitleMusic) window._tdTitleMusic.volume = v;
+  const el = $('td-vol-val');
+  if (el) el.textContent = val + '%';
+
+  window._tdMuted = (v === 0);
+  const muteBtn = $('td-mute-btn');
+  if (muteBtn) {
+    muteBtn.textContent = window._tdMuted ? "UNMUTE" : "MUTE";
+    muteBtn.style.borderColor = window._tdMuted ? "var(--bad)" : "";
+    muteBtn.style.color = window._tdMuted ? "var(--bad)" : "";
+  }
+}
+
+function toggleTDMute() {
+  const slider = $('td-vol-slider');
+  if (!window._tdMuted) {
+    window._tdPreMuteVol = window._tdVolume > 0 ? window._tdVolume : 0.5;
+    updateTDVolume(0);
+    if (slider) slider.value = 0;
+    showT("Audio Muted");
+  } else {
+    const val = (window._tdPreMuteVol || 0.5) * 100;
+    updateTDVolume(val);
+    if (slider) slider.value = val;
+    showT("Audio Unmuted");
+  }
+}
+
+function startTD(levelIdx) {
+  stopTDMusic();
+  if (!window._tdBgMusic) {
+    window._tdBgMusic = new Audio('bg.mp3');
+    window._tdBgMusic.loop = true;
+  }
+  window._tdBgMusic.volume = window._tdVolume !== undefined ? window._tdVolume : 0.5;
+  window._tdBgMusic.play().catch(e => console.log("Audio blocked - interaction required"));
+
+  tdLevelIdx = levelIdx;
+  $('td-modal').classList.add('open');
+  const badge = $('td-endless-badge');
+  if (badge) badge.style.display = levelIdx === 3 ? 'flex' : 'none';
+  tdGame = buildTDGame(levelIdx);
+  tdGame.start();
+}
+function closeTD() {
+  if (tdGame) { tdGame.destroy(); tdGame = null; }
+  $('td-modal').classList.remove('open');
+  $('td-tower-panel').style.display = 'none';
+  stopTDMusic();
+  const badge = $('td-endless-badge');
+  if (badge) badge.style.display = 'none';
+}
+function tdRetry() {
+  if (tdGame) { tdGame.destroy(); tdGame = null; }
+  $('td-tower-panel').style.display = 'none';
+  startTD(tdLevelIdx);
+}
+function tdStartWave() { if (tdGame) tdGame.sendWave(); }
+function tdSelectTower(type) { if (tdGame) tdGame.selectTower(type); }
+function tdUpgradeSelected() { if (tdGame) tdGame.upgradeSelected(); }
+function tdSellSelected() { if (tdGame) tdGame.sellSelected(); }
+function tdDeselectTower() { if (tdGame) tdGame.deselectPlaced(); }
+
+function buildTDGame(levelIdx) {
+  const cv = $('td-canvas');
+  const ctx = cv.getContext('2d');
+  let W = cv.width, H = cv.height;
+  const lvl = TD_LEVELS[levelIdx];
+  const isEndless = TD_LEVELS[levelIdx].endless === true;
+  const waveComps = isEndless ? null : WAVE_SPAWNS[levelIdx];
+
+  let PATH_PX = (lvl.path || TD_PATH).map(([px, py]) => [px * W, py * H]);
+  const PATH_WIDTH = 38;
+
+  let gold = 100 + levelIdx * 50;
+  let lives = 20;
+  let waveNum = 0;
+  let endlessCoinsEarned = 0; // track coins earned this run
+  
+  // Handle gamemode stats
+  const tdMode = window._tdMode || 'normal';
+  if (tdMode === 'hardcore') lives = 1;
+  if (tdMode === 'sandbox') gold = 999999;
+  const rewardMult = tdMode === 'hardcore' ? 1.5 : tdMode === 'sandbox' ? 0 : 1;
+
+  let kills = 0;
+  let selectedTower = null;    // type string for placement
+  let selectedPlaced = null;   // actual placed tower object
+  let towers = [];
+  let enemies = [];
+  let projectiles = [];
+  let particles = [];
+  let waveActive = false;
+  let spawnQueue = [];
+  let spawnTimer = 0;
+  let raf = null;
+  let gameOver = false;
+  let gameWon = false;
+
+  // Resize Logic
+  const resize = () => {
+    W = cv.width = cv.parentElement.clientWidth;
+    H = cv.height = cv.parentElement.clientHeight;
+    PATH_PX = (lvl.path || TD_PATH).map(([px, py]) => [px * W, py * H]);
+  };
+  const ro = new ResizeObserver(resize);
+  ro.observe(cv.parentElement);
+
+  // ── Helpers ──────────────────────────────────────────────
+  function getEffDef(t) {
+    // Returns effective stats after upgrades applied
+    const base = TOWER_DEFS[t.type];
+    const upg = TOWER_UPGRADES[t.type];
+    const lvl = t.upgLevel || 0;
+    return {
+      ...base,
+      dmg:   base.dmg   + upg.dmgBonus   * lvl,
+      range: base.range === 9999 ? 9999 : base.range + upg.rangeBonus * lvl,
+      rate:  base.rate  + (upg.rateBonus  || 0) * lvl,
+      moneyPerWave: (base.moneyPerWave || 0) + (upg.moneyBonus || 0) * lvl,
+    };
+  }
+
+  function upgradeCost(t) {
+    const lvl = t.upgLevel || 0;
+    const costs = TOWER_UPGRADES[t.type].costs;
+    if (lvl >= costs.length) return null; // max
+    return costs[lvl];
+  }
+
+  function sellRefund(t) {
+    return Math.floor(t.totalSpent * 0.5);
+  }
+
+  function setLog(msg) { const el = $('td-log'); if (el) el.textContent = msg; }
+
+  // ── Tower panel UI ────────────────────────────────────────
+  function renderTowerPanel() {
+    const panel = $('td-tower-panel');
+    if (!selectedPlaced) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    const t = selectedPlaced;
+    const def = getEffDef(t);
+    const baseDef = TOWER_DEFS[t.type];
+    const lvl = t.upgLevel || 0;
+    const maxLvl = TOWER_UPGRADES[t.type].costs.length;
+    const stars = '★'.repeat(lvl) + '☆'.repeat(maxLvl - lvl);
+    const cost = upgradeCost(t);
+    const refund = sellRefund(t);
+    const descArr = TOWER_UPGRADES[t.type].desc;
+
+    $('tdtp-icon').textContent = baseDef.icon;
+    $('tdtp-name').textContent = baseDef.name + (lvl > 0 ? ' LV' + (lvl+1) : '');
+    $('tdtp-stars').textContent = stars;
+    $('tdtp-dmg').textContent   = t.type === 'random' ? '—' : def.dmg;
+    $('tdtp-range').textContent = def.range === 9999 ? '∞' : Math.round(def.range);
+    $('tdtp-rate').textContent  = t.type === 'random' ? '—' : def.rate.toFixed(2) + '/s';
+
+    const upgBtn = $('tdtp-upgrade-btn');
+    if (cost === null) {
+      upgBtn.disabled = true;
+      $('tdtp-upgrade-cost').textContent = 'MAX';
+      upgBtn.style.opacity = '0.3';
+    } else {
+      upgBtn.disabled = (gold < cost);
+      const nextDesc = descArr[lvl] || '';
+      $('tdtp-upgrade-cost').textContent = cost + '🧢 — ' + nextDesc;
+      upgBtn.style.opacity = gold < cost ? '0.3' : '1';
+    }
+    $('tdtp-sell-refund').textContent = 'refund ' + refund + '🧢';
+  }
+
+  // ── Main UI update ─────────────────────────────────────────
+  function updateUI() {
+    $('td-hp').textContent = lives;
+    $('td-gold').textContent = gold;
+    $('td-wave').textContent = isEndless ? (waveNum + ' ∞') : (waveNum + '/' + waveComps.length);
+    $('td-kills').textContent = kills;
+    // Update endless badge
+    const badge = $('td-endless-badge');
+    if (badge && isEndless) { $('td-endless-wave-num').textContent = waveNum; }
+    const wbtn = $('td-wave-btn');
+    const waveDone = !isEndless && waveNum >= waveComps.length;
+    wbtn.disabled = waveActive || waveDone || gameOver;
+    if (waveDone && !waveActive) wbtn.textContent = '✓ DONE';
+    else if (waveActive) wbtn.textContent = '⏳ WAVE ' + waveNum;
+    else wbtn.textContent = isEndless ? ('▶ WAVE ' + (waveNum + 1) + ' ∞') : ('▶ WAVE ' + (waveNum + 1));
+    // Afford check on placement buttons
+    Object.entries(TOWER_DEFS).forEach(([k, d]) => {
+      const btn = $('tbt-' + k);
+      if (!btn) return;
+      const isRandomPlaced = k === 'random' && towers.some(t => t.type === 'random');
+      btn.classList.toggle('cant-afford', gold < d.cost || isRandomPlaced);
+      if (k === 'random' && isRandomPlaced) {
+        btn.title = 'Limit 1';
+        btn.querySelector('.td-tower-cost').textContent = 'PLACED';
+      } else {
+        btn.querySelector('.td-tower-cost').textContent = d.cost + ' 🧢';
+      }
+    });
+    renderTowerPanel();
+  }
+
+  // ── Wave ──────────────────────────────────────────────────
+  function sendWave() {
+    const atEnd = !isEndless && waveNum >= waveComps.length;
+    if (waveActive || atEnd || gameOver) return;
+    const comp = isEndless ? generateEndlessWave(waveNum + 1) : waveComps[waveNum];
+    waveNum++;
+    spawnQueue = [];
+    comp.forEach(({t, n}) => {
+      for (let i = 0; i < n; i++) {
+        spawnQueue.push({ type: t, delay: spawnQueue.length * 55 + Math.floor(Math.random() * 20) });
+      }
+    });
+    spawnQueue.sort((a, b) => a.delay - b.delay);
+    spawnTimer = 0;
+    waveActive = true;
+    if (isEndless) {
+      setLog(`♾️ Wave ${waveNum} — enemies at ${Math.round((1 + (waveNum - 1) * 0.05) * 100)}% HP`);
+    } else {
+      setLog(`Wave ${waveNum} incoming!`);
+    }
+    updateUI();
+  }
+
+  // ── Tower selection (placement) ───────────────────────────
+  function selectTower(type) {
+    // Deselect placed tower
+    selectedPlaced = null;
+    renderTowerPanel();
+    // Toggle off if already selected
+    if (selectedTower === type) {
+      selectedTower = null;
+      document.querySelectorAll('.td-tower-btn').forEach(b => b.classList.remove('selected'));
+      setLog('Selection cleared.');
+      return;
+    }
+    const isRandomPlaced = type === 'random' && towers.some(t => t.type === 'random');
+    if (isRandomPlaced) { setLog('You already have a Random placed!'); return; }
+    selectedTower = type;
+    document.querySelectorAll('.td-tower-btn').forEach(b => b.classList.remove('selected'));
+    const btn = $('tbt-' + type);
+    if (btn) btn.classList.add('selected');
+    const def = TOWER_DEFS[type];
+    const extra = type === 'random' ? ' (gives +' + def.moneyPerWave + '🧢/wave, limit 1)' :
+                  type === 'alice' ? ' (infinite range, very slow)' : '';
+    setLog(`${def.name} — ${def.desc}${extra} [${def.cost}🧢]`);
+  }
+
+  // ── Upgrade selected placed tower ─────────────────────────
+  function upgradeSelected() {
+    if (!selectedPlaced) return;
+    const t = selectedPlaced;
+    const cost = upgradeCost(t);
+    if (cost === null) { setLog(`${TOWER_DEFS[t.type].name} is already max level!`); return; }
+    if (gold < cost) { setLog(`Need ${cost}🧢 to upgrade!`); return; }
+    gold -= cost;
+    t.upgLevel = (t.upgLevel || 0) + 1;
+    t.totalSpent += cost;
+    const lvl = t.upgLevel;
+    const descArr = TOWER_UPGRADES[t.type].desc;
+    setLog(`${TOWER_DEFS[t.type].name} upgraded to Level ${lvl + 1}! ${descArr[lvl-1] || ''}`);
+    updateUI();
+  }
+
+  // ── Sell selected placed tower ────────────────────────────
+  function sellSelected() {
+    if (!selectedPlaced) return;
+    const t = selectedPlaced;
+    const refund = sellRefund(t);
+    gold += refund;
+    towers = towers.filter(tt => tt !== t);
+    selectedPlaced = null;
+    setLog(`Sold ${TOWER_DEFS[t.type].name} for ${refund}🧢`);
+    updateUI();
+  }
+
+  function deselectPlaced() {
+    selectedPlaced = null;
+    renderTowerPanel();
+    setLog('');
+  }
+
+  // ── Path helpers ──────────────────────────────────────────
+  function getPathProgress(dist) {
+    let remaining = dist;
+    for (let i = 0; i < PATH_PX.length - 1; i++) {
+      const [x0,y0] = PATH_PX[i], [x1,y1] = PATH_PX[i+1];
+      const segLen = Math.hypot(x1-x0, y1-y0);
+      if (remaining <= segLen) {
+        const t = remaining / segLen;
+        return { x: x0 + (x1-x0)*t, y: y0 + (y1-y0)*t };
+      }
+      remaining -= segLen;
+    }
+    return null;
+  }
+
+  function isOnPath(tx, ty) {
+    for (let i = 0; i < PATH_PX.length - 1; i++) {
+      const [x0,y0]=PATH_PX[i],[x1,y1]=PATH_PX[i+1];
+      const dx=x1-x0, dy=y1-y0, len=Math.hypot(dx,dy);
+      const t=Math.max(0,Math.min(1,((tx-x0)*dx+(ty-y0)*dy)/(len*len)));
+      const cx=x0+t*dx, cy=y0+t*dy;
+      if (Math.hypot(tx-cx,ty-cy) < PATH_WIDTH/2+10) return true;
+    }
+    return false;
+  }
+
+  // ── Place tower ───────────────────────────────────────────
+  function placeTower(tx, ty) {
+    if (!selectedTower) return false;
+    const def = TOWER_DEFS[selectedTower];
+    if (gold < def.cost) { setLog('Not enough gold!'); return false; }
+    if (isOnPath(tx, ty)) { setLog("Can't place on the path!"); return false; }
+    if (selectedTower === 'random' && towers.some(t => t.type === 'random')) {
+      setLog('You can only place one Random!'); return false;
+    }
+    for (const t of towers) {
+      if (Math.hypot(tx - t.px * W, ty - t.py * H) < 22) { setLog("Too close to another tower!"); return false; }
+    }
+    gold -= def.cost;
+    towers.push({ type: selectedTower, def, px: tx / W, py: ty / H, cooldown: 0, upgLevel: 0, totalSpent: def.cost });
+    selectedTower = null;
+    document.querySelectorAll('.td-tower-btn').forEach(b => b.classList.remove('selected'));
+    setLog(def.name + ' placed!');
+    updateUI();
+    return true;
+  }
+
+  // ── Click handler — place or select existing ──────────────
+  const onClick = e => {
+    const rect = cv.getBoundingClientRect();
+    const scaleX = W / rect.width, scaleY = H / rect.height;
+    const tx = (e.clientX - rect.left) * scaleX;
+    const ty = (e.clientY - rect.top) * scaleY;
+
+    // If we have a tower type selected for placement, try to place
+    if (selectedTower) {
+      placeTower(tx, ty);
+      return;
+    }
+
+    // Otherwise, check if clicked on an existing tower
+    let clicked = null;
+    for (const t of towers) {
+      if (Math.hypot(tx - t.px * W, ty - t.py * H) < 18) { clicked = t; break; }
+    }
+    if (clicked) {
+      selectedPlaced = clicked;
+      const def = TOWER_DEFS[clicked.type];
+      const eff = getEffDef(clicked);
+      const lvl = clicked.upgLevel || 0;
+      setLog(`${def.name} Lv${lvl+1} selected — upgrade or sell`);
+      renderTowerPanel();
+    } else {
+      // Clicked empty space with no intent — deselect
+      if (selectedPlaced) {
+        selectedPlaced = null;
+        renderTowerPanel();
+      }
+    }
+  };
+  cv.addEventListener('click', onClick);
+
+  // ── Enemy spawn ───────────────────────────────────────────
+  function spawnEnemy(type) {
+    const def = ENEMY_TYPES[type];
+    // Endless: base +5% HP per wave on top of normal wave scaling
+    const endlessHpMult = isEndless ? (1 + (waveNum - 1) * 0.05) : 1;
+    const hpFinal = def.hp * (1 + waveNum * 0.08) * endlessHpMult;
+    enemies.push({
+      type, def,
+      hp: hpFinal,
+      maxHp: hpFinal,
+      dist: 0, x: PATH_PX[0][0], y: PATH_PX[0][1],
+      spd: def.spd, slowTimer: 0, id: Math.random()
+    });
+  }
+
+  // ── Draw ──────────────────────────────────────────────────
+  function drawPath() {
+    ctx.fillStyle = lvl.bgColor;
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = PATH_WIDTH + 8;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); PATH_PX.forEach(([x,y],i) => i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y)); ctx.stroke();
+    ctx.strokeStyle = lvl.pathColor; ctx.lineWidth = PATH_WIDTH;
+    ctx.beginPath(); PATH_PX.forEach(([x,y],i) => i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y)); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1;
+    ctx.beginPath(); PATH_PX.forEach(([x,y],i) => i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y)); ctx.stroke();
+    const [sx,sy] = PATH_PX[0]; const [ex,ey] = PATH_PX[PATH_PX.length-1];
+    ctx.fillStyle = '#00e676'; ctx.font = '16px serif'; ctx.fillText('▶', sx - 10, sy + 6);
+    ctx.fillStyle = '#ff4444'; ctx.fillText('🏠', ex - 16, ey + 8);
+  }
+
+  function drawTower(t) {
+    const eff = getEffDef(t);
+    const isSelected = t === selectedPlaced;
+    const lvl = t.upgLevel || 0;
+    ctx.save();
+
+    // Selection highlight ring
+    const tx = t.px * W, ty = t.py * H;
+    if (isSelected) {
+      ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 14;
+      ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.arc(tx, ty, 19, 0, Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.shadowBlur = 0;
+    }
+
+    // Base circle
+    ctx.shadowColor = eff.color; ctx.shadowBlur = lvl > 0 ? 12 + lvl * 4 : 8;
+    ctx.fillStyle = lvl === 2 ? '#2a1a00' : lvl === 1 ? '#1a1a2a' : '#1a1a1a';
+    ctx.beginPath(); ctx.arc(tx, ty, 15, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = eff.color; ctx.lineWidth = 1.5 + lvl * 0.5; ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Icon
+    ctx.font = '14px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(eff.icon, tx, ty);
+
+    // Upgrade stars above tower
+    if (lvl > 0) {
+      ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillStyle = '#ffd700';
+      ctx.fillText('★'.repeat(lvl), tx, ty - 16);
+    }
+
+    // Range ring (faint), extra bright when selected
+    const rangeDisplay = eff.range === 9999 ? Math.max(W, H) * 1.5 : eff.range;
+    ctx.strokeStyle = isSelected ? eff.color + '55' : eff.color + '18';
+    ctx.lineWidth = isSelected ? 1.5 : 1;
+    ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.arc(tx, ty, rangeDisplay > 700 ? 700 : rangeDisplay, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Random tower: show money icon and upgrade level
+    if (t.type === 'random') {
+      const bonus = eff.moneyPerWave;
+      ctx.font = '9px Rajdhani,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillStyle = '#ffd700';
+      ctx.fillText('+' + bonus + '🧢', tx, ty + 17);
+    }
+
+    ctx.restore();
+  }
+
+  function drawEnemy(e) {
+    const def = e.def; const r = def.size;
+    ctx.save();
+    ctx.shadowColor = def.color; ctx.shadowBlur = def.boss ? 18 : 6;
+    if (def.boss) {
+      const pulse = 0.8 + 0.2 * Math.sin(Date.now() / 200);
+      ctx.strokeStyle = def.color; ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.4 * pulse;
+      ctx.beginPath(); ctx.arc(e.x, e.y, r + 8, 0, Math.PI*2); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = def.color;
+    ctx.beginPath(); ctx.arc(e.x, e.y, r, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.font = (r * 1.2) + 'px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(def.icon, e.x, e.y);
+    const bw = r * 2.2, bh = 4, bx = e.x - bw/2, by = e.y - r - 8;
+    ctx.fillStyle = '#333'; ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = e.hp/e.maxHp > 0.5 ? '#00e676' : e.hp/e.maxHp > 0.25 ? '#ffaa00' : '#ff4444';
+    ctx.fillRect(bx, by, bw * (e.hp/e.maxHp), bh);
+    if (def.boss) {
+      ctx.fillStyle = def.color; ctx.font = 'bold 9px Rajdhani,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+      ctx.fillText(def.name, e.x, e.y - r - 10);
+    }
+    ctx.restore();
+  }
+
+  function drawProjectile(p) {
+    ctx.save(); ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawParticle(p) {
+    ctx.save(); ctx.globalAlpha = p.life / p.maxLife; ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (p.life / p.maxLife), 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // ── Tower shoot ───────────────────────────────────────────
+  function towerShoot(t, dt) {
+    if (t.type === 'random') return; // Random doesn't shoot
+    const eff = getEffDef(t);
+    t.cooldown -= dt;
+    if (t.cooldown > 0) return;
+    let best = null, bestDist = -1;
+    for (const e of enemies) {
+      const tx = t.px * W, ty = t.py * H;
+      const d = Math.hypot(e.x - tx, e.y - ty);
+      const inRange = eff.range === 9999 ? true : d <= eff.range;
+      if (inRange && e.dist > bestDist) { best = e; bestDist = e.dist; }
+    }
+    if (!best) return;
+    t.cooldown = 1 / eff.rate;
+    const tx = t.px * W, ty = t.py * H;
+    const projR = eff.proj === 'bomb' ? 7 : eff.proj === 'sniper' ? 3 : 4;
+    const projSpd = eff.proj === 'sniper' ? 14 : eff.proj === 'laser' ? 9 : 5;
+    projectiles.push({
+      x: tx, y: ty, tx: best.x, ty: best.y, target: best,
+      dmg: eff.dmg, spd: projSpd, color: eff.color, r: projR,
+      splash: eff.splash || false, splashR: eff.splashR || 0, slow: eff.slow || 0
+    });
+  }
+
+  // ── Game loop ─────────────────────────────────────────────
+  let lastTime = 0;
+  function gameLoop(ts) {
+    const dt = Math.min((ts - lastTime) / 1000, 0.05);
+    const gameDt = window._td2xSpeed ? dt * 2 : dt;
+    lastTime = ts;
+
+    if (waveActive && spawnQueue.length > 0) {
+      spawnTimer += gameDt * 1000;
+      while (spawnQueue.length > 0 && spawnTimer >= spawnQueue[0].delay) spawnEnemy(spawnQueue.shift().type);
+    }
+
+    for (const e of enemies) {
+      const effSpd = e.slowTimer > 0 ? e.def.spd * 0.35 : e.def.spd;
+      e.slowTimer = Math.max(0, e.slowTimer - gameDt);
+      e.dist += effSpd * gameDt * 80;
+      const pos = getPathProgress(e.dist);
+      if (pos) { e.x = pos.x; e.y = pos.y; }
+      else {
+        lives = Math.max(0, lives - (e.def.boss ? 5 : 1));
+        e.hp = 0;
+        for (let i = 0; i < 8; i++) particles.push({ x: e.x, y: e.y, vx:(Math.random()-0.5)*3, vy:(Math.random()-0.5)*3, color:'#ff4444', r:5, life:20, maxLife:20 });
+      }
+    }
+
+    for (const t of towers) towerShoot(t, gameDt);
+
+    for (const p of projectiles) {
+      if (p.target && p.target.hp > 0) { p.tx = p.target.x; p.ty = p.target.y; }
+      const dx = p.tx - p.x, dy = p.ty - p.y, dist = Math.hypot(dx, dy);
+      if (dist < p.spd * 2) {
+        if (p.splash) {
+          for (const e of enemies) { if (Math.hypot(e.x - p.tx, e.y - p.ty) < p.splashR) { e.hp -= p.dmg; if (p.slow) e.slowTimer = 2.5; } }
+        } else if (p.target) { p.target.hp -= p.dmg; if (p.slow) p.target.slowTimer = 2.5; }
+        for (let i = 0; i < 5; i++) particles.push({ x:p.tx, y:p.ty, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4, color:p.color, r:4, life:12, maxLife:12 });
+        p.dead = true;
+      } else { p.x += (dx/dist) * p.spd * gameDt * 60; p.y += (dy/dist) * p.spd * gameDt * 60; }
+    }
+
+    const deadEnemies = enemies.filter(e => e.hp <= 0);
+    deadEnemies.forEach(e => {
+      kills++; gold += e.def.reward;
+      for (let i = 0; i < 10; i++) particles.push({ x:e.x, y:e.y, vx:(Math.random()-0.5)*5, vy:(Math.random()-0.5)*5-2, color:e.def.color, r:Math.random()*5+2, life:22, maxLife:22 });
+    });
+    enemies = enemies.filter(e => e.hp > 0);
+    projectiles = projectiles.filter(p => !p.dead);
+    particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.life--; });
+    particles = particles.filter(p => p.life > 0);
+
+    if (waveActive && spawnQueue.length === 0 && enemies.length === 0) {
+      waveActive = false;
+      if (isEndless) {
+        // Endless: +10 coins per wave, save immediately
+        const endlessReward = Math.round(10 * rewardMult);
+        endlessCoinsEarned += endlessReward;
+        gold += endlessReward;
+        
+        // Banker bonus (formerly random)
+        let bankerBonus = 0;
+        towers.forEach(t => { if (t.type === 'banker') bankerBonus += getEffDef(t).moneyPerWave; });
+        if (bankerBonus > 0) gold += bankerBonus;
+
+        if (UC && FB_READY) { UC.coins = (UC.coins || 0) + endlessReward; saveCoins(); refreshBal(); }
+        // Random tower bonus still applies
+        // (Logic handled above now)
+        const nextHp = Math.round((1 + waveNum * 0.05) * 100);
+        setLog(`♾️ Wave ${waveNum} cleared! +${endlessReward}🧢 earned · Next wave: enemies at ${nextHp}% HP`);
+      } else {
+        const baseBonus = 25 + waveNum * 5;
+        let bankerBonus = 0;
+        towers.forEach(t => { if (t.type === 'banker' || t.type === 'random') bankerBonus += getEffDef(t).moneyPerWave; });
+        gold += Math.round((baseBonus + bankerBonus) * (tdMode === 'sandbox' ? 0 : 1));
+        const bonusMsg = bankerBonus > 0 ? ` (+${bankerBonus}🧢 from Banking)` : '';
+        setLog(`Wave ${waveNum} cleared! +${baseBonus}🧢 bonus${bonusMsg}`);
+      }
+      if (window._tdAutoplay && !gameOver && !gameWon) {
+        setTimeout(() => { if (!waveActive && !gameOver && !gameWon) tdStartWave(); }, window._td2xSpeed ? 600 : 1200);
+      }
+      updateUI();
+    }
+
+    if (lives <= 0 && !gameOver) { gameOver = true; showTDResult(false); }
+    // Only trigger win for non-endless modes
+    if (!isEndless && waveNum >= waveComps.length && !waveActive && enemies.length === 0 && !gameWon && !gameOver) { gameWon = true; showTDResult(true); }
+
+    updateUI();
+    drawPath();
+    towers.forEach(drawTower);
+    enemies.forEach(drawEnemy);
+    projectiles.forEach(drawProjectile);
+    particles.forEach(drawParticle);
+
+    if (!gameOver && !gameWon) raf = requestAnimationFrame(gameLoop);
+  }
+
+  async function showTDResult(won) {
+    const ov = $('td-result-overlay'), msg = $('td-result-msg'), sub = $('td-result-sub');
+    ov.style.display = 'flex';
+    if (isEndless) {
+      msg.textContent = 'FALLEN'; msg.style.color = '#ff4444';
+      sub.textContent = `You survived ${waveNum} wave${waveNum !== 1 ? 's' : ''} · Earned ${endlessCoinsEarned}🧢 total`;
+      // Hide endless badge on death
+      const badge = $('td-endless-badge');
+      if (badge) badge.style.display = 'none';
+    } else if (won) {
+      const reward = Math.round(TD_LEVELS[levelIdx].reward * rewardMult);
+      msg.textContent = 'VICTORY!'; msg.style.color = '#00e676';
+      sub.textContent = `All waves cleared! +${reward} 🧢 earned.`;
+      if (UC && FB_READY) { UC.coins = (UC.coins || 0) + reward; await saveCoins(); refreshBal(); }
+    } else {
+      msg.textContent = 'DEFEATED'; msg.style.color = '#ff4444';
+      sub.textContent = 'The enemies broke through. Try again!';
+    }
+  }
+
+  return {
+    start() {
+      lastTime = performance.now();
+      raf = requestAnimationFrame(gameLoop);
+      if (window._tdFullscreen) enterFullscreen($('td-modal'));
+      updateUI();
+      setLog('Click a tower above, then click the map to place it.');
+      $('td-result-overlay').style.display = 'none';
+    },
+    sendWave,
+    selectTower,
+    upgradeSelected,
+    sellSelected,
+    deselectPlaced,
+    destroy() {
+      if (raf) cancelAnimationFrame(raf);
+      if (document.fullscreenElement) exitFullscreen();
+      ro.disconnect();
+      cv.removeEventListener('click', onClick);
+    }
+  };
+}
+
+function setTDMode(mode) {
+  window._tdMode = mode;
+  document.querySelectorAll('.td-gm-select .diff-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('td-gm-' + mode);
+  if (btn) btn.classList.add('active');
+  showT("Gamemode set to " + mode.toUpperCase());
+}
+
+// --- EXPANDED TD CONTENT ---
+TD_PATH = [ // Original
+  [0, 0.42], [0.18, 0.42], [0.18, 0.18], [0.42, 0.18], [0.42, 0.65], [0.62, 0.65], [0.62, 0.28], [0.82, 0.28], [0.82, 0.75], [1.02, 0.75]
+];
+const PATH_SPIRAL = [[0, 0.5], [0.2, 0.5], [0.2, 0.2], [0.8, 0.2], [0.8, 0.8], [0.4, 0.8], [0.4, 0.4], [0.6, 0.4], [0.6, 0.6], [1.1, 0.6]];
+const PATH_ZIGZAG = [[0, 0.1], [0.9, 0.1], [0.1, 0.3], [0.9, 0.3], [0.1, 0.5], [0.9, 0.5], [0.1, 0.7], [1.1, 0.7]];
+
+TD_LEVELS[0].path = TD_PATH;
+TD_LEVELS[1].path = PATH_ZIGZAG;
+TD_LEVELS[2].path = TD_PATH;
+TD_LEVELS[3].path = PATH_SPIRAL;
+TD_LEVELS.push(
+  { name:"The Spiral", waves:10, reward:600, pathColor:'#9b4e3c', bgColor:'#111', path: PATH_SPIRAL },
+  { name:"Character Gauntlet", waves:15, reward:2500, pathColor:'#333', bgColor:'#1a0000', path: PATH_ZIGZAG }
+);
+
+TOWER_DEFS.liam = { name:'liam', icon:'🐢', cost:400, range:120, dmg:450, rate:0.5, color:'#cc8844', proj:'bomb', splash:true, splashR:40, slow: 1.5, desc:'Heavy hitter. Massive damage with a high stun chance.' };
+TOWER_DEFS.ben = { name:'ben', icon:'🧪', cost:225, range:140, dmg:12,  rate:1.8, color:'#44cc44', proj:'laser', slow: 2.0, desc:'Slime shooter. Leaves enemies in a sticky puddle.' };
+TOWER_DEFS.yike  = { name:'YIKE',  icon:'🔱', cost:350, range:160, dmg:85,  rate:4.5, color:'#ffdd00', proj:'sniper', desc:'Godly speed. High fire rate multi-striker.' };
+
+TOWER_UPGRADES.liam = { costs:[600, 1200], dmgBonus:400, rangeBonus:20, rateBonus:0.2, desc:['Iron shell','Titan strength'] };
+TOWER_UPGRADES.ben = { costs:[300, 700],  dmgBonus:15,  rangeBonus:30, rateBonus:0.5, desc:['Toxic mix','Super glue'] };
+TOWER_UPGRADES.yike  = { costs:[500, 1000], dmgBonus:60,  rangeBonus:40, rateBonus:1.5, desc:['Divine haste','Zeus fury'] };
+
+WAVE_SPAWNS[4] = [
+  [{t:'overcontrol',n:15}], [{t:'ben',n:10}], [{t:'liam',n:8}], [{t:'yike',n:12}], [{t:'doodle',n:10}],
+  [{t:'yike_boss',n:1}], [{t:'doodle_boss',n:1}], [{t:'yike_boss',n:2}], [{t:'doodle_boss',n:2}], [{t:'yike_boss',n:3}]
+];
+WAVE_SPAWNS[5] = [];
+for(let i=1; i<=15; i++) {
+  WAVE_SPAWNS[5].push([
+    {t:'overcontrol', n:10+i*2},
+    {t:'liam', n:Math.floor(i/2)},
+    {t:'yike', n:Math.floor(i/3)},
+    {t:'yike_boss', n: i%5===0 ? 1 : 0}
+  ]);
+}
+
 
 </script>
 </body>
