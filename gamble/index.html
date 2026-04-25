@@ -2061,7 +2061,7 @@ let TD_PATH = [
 const TOWER_DEFS = {
   finn:   { name:'Finn',   icon:'🎯', cost:50,  range:100, dmg:100,  rate:2.5, color:'#66dd44', proj:'arrow',  splash:false, desc:'Starter. Cheap and reliable.' },
   gavin:  { name:'Gavin',  icon:'⚡', cost:250, range:80,  dmg:5,  rate:12000.0, color:'#ff8800', proj:'laser',  splash:false, desc:'Rapid fire. Low dmg but relentless.', limit:1 },
-  alice:  { name:'Alice',  icon:'👀', cost:175, range:676767,dmg:250,  rate:0.6,color:'#44aaff', proj:'sniper', splash:false, desc:'Infinite range. Hits hard. Very slow.' },
+  alice:  { name:'Alice',  icon:'👀', cost:175, range:676767,dmg:250,  rate:0.6,color:'#44aaff', proj:'sniper', splash:true, desc:'Infinite range. Hits hard. Very slow.' },
   random: { name:'Random', icon:'💰', cost:175,  range:5,   dmg:20000,   rate:0,   color:'#ffcc44', proj:'none',   splash:false, desc:'No damage. Gives +40🧢/wave. LIMIT 1.', moneyPerWave:500 },
   peter:  { name:'Peter',  icon:'💀', cost:3000, range:148, dmg:210, rate:1.0, color:'#ff2244', proj:'bomb',   splash:true,  splashR:65, desc:'Very expensive. Very powerful.' },
   shredder: { name:'Armor Shredder', icon:'🚜', cost:550, range:130, dmg:900, rate:0.4, color:'#aa66ff', proj:'laser', desc:'Slow but heavy. Shreds high-HP targets.' },
@@ -2069,34 +2069,34 @@ const TOWER_DEFS = {
   banker: { name:'Money Maker', icon:'🏦', cost:400, range:10, dmg:0, rate:0, color:'#00ff00', proj:'none', desc:'Non-combat. Prints money every wave.', moneyPerWave: 150 },
   gavinjr: { name:'Gavin Jr.', icon:'🐥', cost:35, range:85, dmg:4, rate:9.0, color:'#ffcc00', proj:'laser', splash:false, desc:'Gavin\'s mini-me. Very cheap, very fast.' },
   bac: { name:'Bac', icon:'✨', cost:950, range:200, dmg:1500, rate:0.3, color:'#ffffff', proj:'sniper', splash:false, desc:'Divine power. Massive damage per shot.' },
-  sunggobs: { name:'Sun Ggobs', icon:'☀️', cost:550, range:180, dmg:350, rate:1.0, color:'#ffaa00', proj:'laser', desc:'Divine radiance. Scorches enemies with pure solar energy.' },
+  sunggobs: { name:'Sun Avatar', icon:'🔮', cost:550, range:180, dmg:20, rate:100.0, color:'#ffaa00', proj:'chain', chainMax:50 desc:'Divine radiance. Scorches enemies with pure solar energy.' },
   // ── BTD6-inspired ──────────────────────────────────────────
-  stickyfinn:   { name:'Sticky Finn',    icon:'🍯', cost:180,   range:108, dmg:6,   rate:1.1,  color:'#aadd00', proj:'glue',   splash:true,  splashR:36, slowGlue:true, desc:'Glue Gunner — barely moves stuck enemies. Low dmg, huge utility.' },
-  stormalice:   { name:'Storm Alice',    icon:'⛈️', cost:1100,  range:155, dmg:130, rate:0.85, color:'#9999ff', proj:'chain',  splash:false, chainMax:5, desc:'Ball Lightning — arcs through up to 5 enemies per shot.' },
-  gigagavin:    { name:'Giga Gavin',     icon:'🌀', cost:3500,  range:140, dmg:75,  rate:8.0,  color:'#ff6600', proj:'laser',  splash:false, multiShot:3, desc:'Super Monkey — fires at 3 targets simultaneously.' },
+  stickyfinn:   { name:'Sticky Finn',    icon:'🍯', cost:800,   range:100, dmg:0,   rate:80.0,  color:'#FFFFFF', proj:'glue',   splash:true,  splashR:36, slowGlue:true, desc:'Glue Gunner — barely moves stuck enemies. Low dmg, huge utility.' },
+  stormalice:   { name:'Harbringer',    icon:'⛈️', cost:1100,  range:155, dmg:130, rate:1.0, color:'#9999ff', proj:'chain',  splash:false, chainMax:5, desc:'Ball Lightning — arcs through up to 5 enemies per shot.' },
+  gigagavin:    { name:'Super Gavin',     icon:'🌀', cost:3500,  range:140, dmg:25,  rate:20.0,  color:'#ff6600', proj:'laser',  splash:false, multiShot:80, desc:'Super Monkey — fires at 3 targets simultaneously.' },
   villagealice: { name:'Village Alice',  icon:'🏘️', cost:1500,  range:185, dmg:0,   rate:0,    color:'#ffdd44', proj:'none',   splash:false, isVillage:true, buffMult:1.3, limit:1, moneyPerWave:60, desc:'Monkey Village — nearby towers get +30% dmg & rate. Limit 1.' },
   enhancedpeter:{ name:'Enhanced Peter', icon:'☀️', cost:15000, range:200, dmg:500, rate:1.2,  color:'#ffaa00', proj:'bomb',   splash:true,  splashR:110, isSunGod:true, limit:1, noUpgrade:true, desc:'True Sun God — SACRIFICE nearby towers for +1 dmg per 🧢 spent on them.' },
   // ── Awakened One (BTD6 Minigunner) ───────────────────────────────────────
   // Upgrades: Lv1 → Lv2 → Lv3 (max). At Lv3 the EVOLVE button appears.
   // Evolving converts the tower to awakenedone_laser (Laser Minigunner form).
   awakenedone:  { name:'Awakened One',      icon:'🔫', cost:800,  range:130, dmg:28,  rate:6.5, color:'#4488ff', proj:'laser', splash:false, canEvolve:true, desc:'BTD6 Minigunner. Rapid-fire single target. Evolves at max level.' },
-  awakenedone_laser: { name:'Awakened One ✦ LASER', icon:'💠', cost:800, range:160, dmg:90, rate:10.0, color:'#00eeff', proj:'laser', splash:false, isLaserForm:true, noUpgrade:true, multiShot:2, desc:'Laser Minigunner. Dual-target laser beam. Cannot be upgraded further.' }
+  awakenedone_laser: { name:'Awakened One ✦ LASER', icon:'💠', cost:16000, range:160, dmg:100, rate:100.0, color:'#00eeff', proj:'laser', splash:false, isLaserForm:true, noUpgrade:true, multiShot:2, desc:'Laser Minigunner. Dual-target laser beam. Cannot be upgraded further.' }
 };
 
 // Upgrade costs per level [lvl1, lvl2] and stat boosts per level
 const TOWER_UPGRADES = {
   finn:   { costs:[75, 100],   dmgBonus:-12.5, rangeBonus:12.5,  rateBonus:1.25, desc:['Better arrows','Elite marksman'] },
   gavin:  { costs:[900, 1800],  dmgBonus:12.5,  rangeBonus:0,  rateBonus:240000.5,  desc:['Turbo fire','Machine mode'] },
-  alice:  { costs:[130, 260], dmgBonus:250, rangeBonus:0,  rateBonus:0.2, desc:['Hollow points','Anti-boss rounds'] },
+  alice:  { costs:[130, 260], dmgBonus:250, rangeBonus:0,  rateBonus:0.2, desc:['Explosive Rounds','Anti-boss rounds'] },
   random: { costs:[250, 500],  dmgBonus:0,  rangeBonus:0,  rateBonus:0,    moneyBonus:250, desc:['Better hustle','+more hustle'] },
-  peter:  { costs:[6000, 8000], dmgBonus:1000,rangeBonus:180, rateBonus:16,  desc:['Overclocked','God mode'] },
+  peter:  { costs:[6000, 8000], dmgBonus:1000,rangeBonus:18224220, rateBonus:8,  desc:['Overclocked','God mode'] },
   shredder: { costs:[800, 1500], dmgBonus:1200, rangeBonus:20, rateBonus:0.1, desc:['Tungsten rounds','Hyper-velocity'] },
   icespiker: { costs:[400, 900], dmgBonus:10, rangeBonus:40, rateBonus:0.3, desc:['Deep freeze','Absolute zero'] },
   banker: { costs:[600, 1200], dmgBonus:0, rangeBonus:0, rateBonus:0, moneyBonus: 300, desc:['Interest rates','Stock market'] },
   gavinjr: { costs:[40, 80], dmgBonus:2, rangeBonus:15, rateBonus:2.0, desc:['Extra pecks','Turbo bird'] },
   bac: { costs:[1200, 2500], dmgBonus:1000, rangeBonus:50, rateBonus:0.1, desc:['Holy light','Judgement day'] },
   sunggobs:     { costs:[800, 2000], dmgBonus:450, rangeBonus:40, rateBonus:0.4, desc:['Solar Flare','Supernova'] },
-  stickyfinn:   { costs:[200, 420],  dmgBonus:5,   rangeBonus:18, rateBonus:0.25, desc:['Wider puddles','Corrosive glue'] },
+  stickyfinn:   { costs:[200, 420],  dmgBonus:0,   rangeBonus:25, rateBonus:1515.25, desc:['Wider puddles','Corrosive glue'] },
   stormalice:   { costs:[900, 1800], dmgBonus:85,  rangeBonus:25, rateBonus:0.2,  chainBonus:2, desc:['More bounces','Thunderstorm'] },
   gigagavin:    { costs:[2500,5000], dmgBonus:50,  rangeBonus:15, rateBonus:2.0,  desc:['Plasma bolts','Robo mode'] },
   villagealice: { costs:[1000,2000], dmgBonus:0,   rangeBonus:45, rateBonus:0,    buffBonus:0.1, moneyBonus:60, desc:['Wider aura','Overclock aura'] },
