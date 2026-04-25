@@ -3414,8 +3414,8 @@ function handleMusicToggle(on){
   if(on){
     if(!bgMusic){
       bgMusic=new Audio();
-      bgMusic.src='https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-      // We use a royalty-free energetic track. Replace URL with your own hosted track.
+      bgMusic.src='theme.mp3';
+
       bgMusic.loop=true;
       bgMusic.volume=0.25;
     }

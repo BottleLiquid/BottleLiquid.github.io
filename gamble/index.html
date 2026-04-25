@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>LiquidType — Casino</title>
+<title>LiquidType — Arcade</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -312,15 +312,15 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 </style>
 </head>
 <body>
-<div id="page-loading"><div class="ld-logo">💧 Casino</div><div class="ld-dots"><div class="ld-dot"></div><div class="ld-dot"></div><div class="ld-dot"></div></div></div>
+<div id="page-loading"><div class="ld-logo">💧 Arcade</div><div class="ld-dots"><div class="ld-dot"></div><div class="ld-dot"></div><div class="ld-dot"></div></div></div>
 <div class="scan-line"></div>
-<div id="not-logged"><p>You need to be logged in to gamble.</p><a href="/index.html" class="go-btn">Go to LiquidType →</a></div>
+<div id="not-logged"><p>You need to be logged in to play.</p><a href="/index.html" class="go-btn">Go to LiquidType →</a></div>
 <div id="casino-app" style="display:none;width:100%;max-width:800px;position:relative;z-index:5">
   <div class="topbar">
-    <a class="tlogo" href="/index.html">LiquidType <span>Casino</span></a>
+    <a class="tlogo" href="/index.html">LiquidType <span>Arcade</span></a>
     <div class="tnav"><div class="coin-bar">💧 <span id="top-coins">0</span></div><a href="/index.html" class="tlink">← Back</a></div>
   </div>
-  <div class="neon-header"><div class="neon-title" id="cas-title">🎰 CASINO</div><div class="neon-sub">Risk your bottlecaps — win big or go broke</div><div class="hot-table" id="hook-msg">HUGE JACKPOTS DROPPING NOW! 🎰</div></div>
+  <div class="neon-header"><div class="neon-title" id="cas-title">🎰 ARCADE</div><div class="neon-sub">Risk your bottlecaps — win big or go broke</div><div class="hot-table" id="hook-msg">HUGE JACKPOTS DROPPING NOW! 🎰</div></div>
   
   <div class="game-tabs">
     <div class="gtab on" onclick="switchGame('slots')">🎰 Slots</div>
@@ -985,6 +985,15 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
             <div class="td-tower-btn" id="tbt-banker" onclick="tdSelectTower('banker')">
               <div class="td-tower-icon">🏦</div><div class="td-tower-name">Banker</div><div class="td-tower-cost">400🧢</div>
             </div>
+            <div class="td-tower-btn" id="tbt-gavinjr" onclick="tdSelectTower('gavinjr')">
+              <div class="td-tower-icon">🐥</div><div class="td-tower-name">Gavin Jr.</div><div class="td-tower-cost">35🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-bac" onclick="tdSelectTower('bac')">
+              <div class="td-tower-icon">✨</div><div class="td-tower-name">Bac</div><div class="td-tower-cost">950🧢</div>
+            </div>
+            <div class="td-tower-btn" id="tbt-sunggobs" onclick="tdSelectTower('sunggobs')">
+              <div class="td-tower-icon">☀️</div><div class="td-tower-name">Sun Ggobs</div><div class="td-tower-cost">550🧢</div>
+            </div>
           </div>
         </div>
 
@@ -1077,6 +1086,19 @@ async function init(){
   if(!UC){document.getElementById('not-logged').style.display='block';return;}
   document.getElementById('casino-app').style.display='block';
   refreshBal();
+  
+  // Start background music
+  if (!window._casBgMusic) {
+    window._casBgMusic = new Audio('theme.mp3');
+    window._casBgMusic.loop = true;
+    window._casBgMusic.volume = 0.3;
+  }
+  window._casBgMusic.play().catch(() => {
+    document.addEventListener('click', () => {
+      window._casBgMusic.play();
+    }, { once: true });
+  });
+
   initReels();
   initPlinkoBoard();
   const urlParams = new URLSearchParams(window.location.search);
@@ -1191,8 +1213,8 @@ async function claimMega(){if(!UC?.megaJackpot||UC.megaJackpot.status!=='pending
 function jackpotRain(){const cols=['#ffd700','#ff4444','#00e676','#ffffff','#ff88ff'];for(let i=0;i<100;i++)setTimeout(()=>{const p=document.createElement('div');p.className='jp-particle';p.style.cssText=`left:${Math.random()*100}vw;top:0;width:${3+Math.random()*7}px;height:${3+Math.random()*7}px;background:${cols[Math.floor(Math.random()*cols.length)]};animation-duration:${0.8+Math.random()*1.2}s`;document.body.appendChild(p);setTimeout(()=>p.remove(),2500);},i*25);}
 function showT(msg){const t=document.createElement('div');t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(200,0,0,.95);color:#fff;padding:10px 22px;border-radius:8px;font-family:Rajdhani,sans-serif;font-weight:700;font-size:.95rem;z-index:9999;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
 function flashBody(){document.body.style.filter='brightness(1.5)';setTimeout(()=>document.body.style.filter='',150);}
-const CASINO_MESSAGES=["DEALER IS ON A COLD STREAK! 🔥","MEGA JACKPOT IS WAITING... 🏆","BOTTLECAPS ARE FLOWING... 💧","FEELING LUCKY? DOUBLE DOWN! 🃏","MAX BETS = MAX GAINS 🚀","ROULETTE IS HOT RIGHT NOW! 🎡","CHESS MASTERS WIN BIG! ♟️","CRASH TO THE MOON! 📈"];
-function updateHookMsg(){const el=$('hook-msg');if(el)el.textContent=CASINO_MESSAGES[Math.floor(Math.random()*CASINO_MESSAGES.length)];}
+const ARCADE_MESSAGES=["DEALER IS ON A COLD STREAK! 🔥","MEGA JACKPOT IS WAITING... 🏆","BOTTLECAPS ARE FLOWING... 💧","FEELING LUCKY? DOUBLE DOWN! 🃏","MAX BETS = MAX GAINS 🚀","ROULETTE IS HOT RIGHT NOW! 🎡","CHESS MASTERS WIN BIG! ♟️","CRASH TO THE MOON! 📈"];
+function updateHookMsg(){const el=$('hook-msg');if(el)el.textContent=ARCADE_MESSAGES[Math.floor(Math.random()*ARCADE_MESSAGES.length)];}
 setInterval(updateHookMsg,8000);
 setInterval(()=>{const t=$('cas-title');if(t)t.style.transform=`scale(${1+Math.random()*0.05}) rotate(${(Math.random()-0.5)*2}deg)`;},2000);
 init();
@@ -2000,7 +2022,10 @@ const TOWER_DEFS = {
   peter:  { name:'Peter',  icon:'💀', cost:3000, range:148, dmg:210, rate:1.0, color:'#ff2244', proj:'bomb',   splash:true,  splashR:65, desc:'Very expensive. Very powerful.' },
   shredder: { name:'Armor Shredder', icon:'🚜', cost:550, range:130, dmg:900, rate:0.4, color:'#aa66ff', proj:'laser', desc:'Slow but heavy. Shreds high-HP targets.' },
   icespiker: { name:'Frost Spiker', icon:'❄️', cost:300, range:140, dmg:5, rate:1.2, color:'#00ffff', proj:'arrow', slow: 3.5, desc:'Utility tower. Heavily slows enemies in range.' },
-  banker: { name:'Money Maker', icon:'🏦', cost:400, range:10, dmg:0, rate:0, color:'#00ff00', proj:'none', desc:'Non-combat. Prints money every wave.', moneyPerWave: 150 }
+  banker: { name:'Money Maker', icon:'🏦', cost:400, range:10, dmg:0, rate:0, color:'#00ff00', proj:'none', desc:'Non-combat. Prints money every wave.', moneyPerWave: 150 },
+  gavinjr: { name:'Gavin Jr.', icon:'🐥', cost:35, range:85, dmg:4, rate:9.0, color:'#ffcc00', proj:'laser', splash:false, desc:'Gavin\'s mini-me. Very cheap, very fast.' },
+  bac: { name:'Bac', icon:'✨', cost:950, range:200, dmg:1500, rate:0.3, color:'#ffffff', proj:'sniper', splash:false, desc:'Divine power. Massive damage per shot.' },
+  sunggobs: { name:'Sun Ggobs', icon:'☀️', cost:550, range:180, dmg:350, rate:1.0, color:'#ffaa00', proj:'laser', desc:'Divine radiance. Scorches enemies with pure solar energy.' }
 };
 
 // Upgrade costs per level [lvl1, lvl2] and stat boosts per level
@@ -2012,7 +2037,10 @@ const TOWER_UPGRADES = {
   peter:  { costs:[6000, 8000], dmgBonus:1000,rangeBonus:180, rateBonus:16,  desc:['Overclocked','God mode'] },
   shredder: { costs:[800, 1500], dmgBonus:1200, rangeBonus:20, rateBonus:0.1, desc:['Tungsten rounds','Hyper-velocity'] },
   icespiker: { costs:[400, 900], dmgBonus:10, rangeBonus:40, rateBonus:0.3, desc:['Deep freeze','Absolute zero'] },
-  banker: { costs:[600, 1200], dmgBonus:0, rangeBonus:0, rateBonus:0, moneyBonus: 300, desc:['Interest rates','Stock market'] }
+  banker: { costs:[600, 1200], dmgBonus:0, rangeBonus:0, rateBonus:0, moneyBonus: 300, desc:['Interest rates','Stock market'] },
+  gavinjr: { costs:[40, 80], dmgBonus:2, rangeBonus:15, rateBonus:2.0, desc:['Extra pecks','Turbo bird'] },
+  bac: { costs:[1200, 2500], dmgBonus:1000, rangeBonus:50, rateBonus:0.1, desc:['Holy light','Judgement day'] },
+  sunggobs: { costs:[800, 2000], dmgBonus:450, rangeBonus:40, rateBonus:0.4, desc:['Solar Flare','Supernova'] }
 };
 
 // Enemy types
