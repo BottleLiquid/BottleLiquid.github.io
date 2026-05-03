@@ -831,7 +831,9 @@ function doLogout() {
   if(dmConvoUnsub)try{dmConvoUnsub();}catch(e){}dmConvoUnsub=null;
   if(teamChatUnsub)try{teamChatUnsub();}catch(e){clearInterval(teamChatUnsub);}teamChatUnsub=null;
   activeDMId=null; dmCache={}; teamCache=null;
-  document.getElementById('app').style.display='none';
+  // Remove .shown so #app display:none from CSS kicks in (don't set inline style)
+  document.getElementById('app').classList.remove('shown');
+  document.getElementById('app').style.display='';
   document.getElementById('auth').style.display='none';
   showWelcomeScreen();
   document.getElementById('li-btn').disabled=false; document.getElementById('li-btn').textContent='Login';
@@ -841,8 +843,10 @@ function doLogout() {
 }
 function enterApp() {
   document.getElementById('auth').style.display='none';
-  document.getElementById('app').style.display='block';
+  document.getElementById('app').classList.add('shown');
   document.getElementById('nav-user').textContent=UC.username;
+  const sbAv = document.getElementById('sb-avatar');
+  if (sbAv) sbAv.textContent = UC.username.charAt(0).toUpperCase();
   refreshCoins(); applyTheme(UC.activeTheme||'default',UC.gradientColors||null); deleteOldMessages();
   goTab('home');
   renderShop(); startChatListener(); renderLB(); startDMListener(); loadBannedWords(); syncActiveAbilities(); checkTrollNotif(); applyActiveTrollEffects(); startTrollEffectWatcher(); checkFeudalStatus(); startPresence();
@@ -856,9 +860,14 @@ function enterApp() {
 
 // ── NAV ────────────────────────────────────────────────
 function goTab(id) {
-  document.querySelectorAll('.ntab').forEach((t,i)=>t.classList.toggle('on',['home','race','teams','items','inventory','shop','chat','lb','dm','trade','battlepass'][i]===id));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  document.getElementById('tab-'+id).classList.add('on');
+  // Sidebar tab highlight
+  document.querySelectorAll('.sbtab').forEach(t => t.classList.remove('on'));
+  const activeBtn = document.getElementById('sbtab-' + id);
+  if (activeBtn) activeBtn.classList.add('on');
+  // Show/hide tab panels
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  const tabEl = document.getElementById('tab-' + id);
+  if (tabEl) tabEl.classList.add('on');
   if(id==='home') renderHome();
   if(id==='society') renderSocietyTab();
   if(id==='teams') renderTeamsTab();
@@ -880,19 +889,14 @@ function refreshCoins() {
   if (itemsEl) itemsEl.textContent=c;
   const invEl = document.getElementById('inv-coins');
   if (invEl) invEl.textContent=c;
-  // Plasma display
+  // Plasma display — sidebar chip
   const plasma = UC ? (UC.plasma || 0) : 0;
   const plasmaDisplay = document.getElementById('plasma-display');
   const plasmaCount = document.getElementById('plasma-count');
-  const plasmaShopBtn = document.getElementById('plasma-shop-nav-btn');
   if (plasmaDisplay && plasmaCount) {
     plasmaCount.textContent = plasma;
-    plasmaDisplay.style.display = plasma > 0 ? 'flex' : 'none';
-  }
-  if (plasmaShopBtn) {
-    // Show shop button if player has ever rebirthed (even if plasma spent down to 0)
     const hasRebirthed = UC && (UC.rebirths || 0) > 0;
-    plasmaShopBtn.style.display = hasRebirthed ? '' : 'none';
+    plasmaDisplay.style.display = (plasma > 0 || hasRebirthed) ? 'flex' : 'none';
   }
 }
 
@@ -1353,17 +1357,28 @@ function esca(s){return String(s).replace(/'/g,"\\'")}
 async function renderHome() {
   if(!UC) return;
   document.getElementById('home-user').textContent = UC.username;
-  document.getElementById('h-coins').textContent = UC.coins || 0;
+  // Sidebar avatar initial
+  const sbAv = document.getElementById('sb-avatar');
+  if (sbAv) sbAv.textContent = UC.username.charAt(0).toUpperCase();
+  // Time-based greeting
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? 'morning' : hr < 17 ? 'afternoon' : 'evening';
+  const greetEl = document.getElementById('home-time-greet');
+  if (greetEl) greetEl.textContent = greet;
+
+  document.getElementById('h-coins').textContent = (UC.coins||0).toLocaleString();
   document.getElementById('h-streak').textContent = UC.streak || 1;
   document.getElementById('h-wpm').textContent = UC.maxWpm || 0;
   document.getElementById('h-themes').textContent = (UC.themes || []).length;
   // Show plasma row only if player has rebirthed
   const plasmaRow = document.getElementById('h-plasma-row');
+  const rebirthPill = document.getElementById('h-rebirths-pill');
   if (plasmaRow) {
     const plasma = UC.plasma || 0;
     const rebirths = UC.rebirths || 0;
     if (rebirths > 0 || plasma > 0) {
       plasmaRow.style.display = '';
+      if (rebirthPill) rebirthPill.style.display = '';
       document.getElementById('h-plasma').textContent = plasma;
       document.getElementById('h-rebirths').textContent = rebirths;
     }
@@ -1395,7 +1410,7 @@ async function renderHome() {
         <div class="h-news-ver">Version ${esc(latest.version)}</div>
         <ul class="h-news-changes">
           ${latest.changes.slice(0, 3).map(c => `<li>${esc(c)}</li>`).join('')}
-          ${latest.changes.length > 3 ? '<li>...and more</li>' : ''}
+          ${latest.changes.length > 3 ? '<li>…and more</li>' : ''}
         </ul>
       </div>
     `;

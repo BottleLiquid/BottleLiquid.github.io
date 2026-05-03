@@ -135,104 +135,165 @@
 </div>
 
 <div id="app">
-  <nav class="nav">
-    <div class="nav-logo">LiquidType</div>
-    <div class="nav-tabs">
-      <button class="ntab on" onclick="goTab('home')">🏠 Home</button>
-      <button class="ntab" onclick="goTab('race')">🏁 Race</button>
-      <button class="ntab" onclick="goTab('teams')">👥 Teams</button>
-      <button class="ntab" onclick="goTab('items')">🎁 Items</button>
-      <button class="ntab" onclick="goTab('inventory')">🎒 Inventory</button>
-      <button class="ntab" onclick="goTab('shop')">🛒 Shop</button>
-      <button class="ntab" onclick="goTab('chat')">💬 Chat</button>
-      <button class="ntab" onclick="goTab('lb')">🏆 Leaderboard</button>
-      <div class="dm-ntab-wrap"><button class="ntab" onclick="goTab('dm')">✉ DMs</button><div class="dm-notif" id="dm-notif"></div></div>
-
-      <div class="dm-ntab-wrap"><button class="ntab" onclick="goTab('trade')">🤝 Trade</button><div class="dm-notif" id="trade-notif"></div></div>
-      <div class="dm-ntab-wrap"><button class="ntab" onclick="goTab('battlepass')" style="background:linear-gradient(135deg,rgba(255,170,0,.18),rgba(180,80,255,.18));border-color:rgba(255,170,0,.4);color:#ffcc44">⚔ Battle Pass</button><div class="dm-notif" id="bp-notif" style="background:#ffcc44;color:#000"></div></div>
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo" onclick="goTab('home')">
+      <span class="sb-logo-lt">LT</span>
+      <span class="sb-logo-full">LiquidType</span>
     </div>
-    <div class="nav-r">
-      <div class="coins">🧢 <span id="coin-count">0</span></div>
-      <div class="plasma-display" id="plasma-display" style="display:none" onclick="openPlasmaShop()" title="Open Plasma Shop" style="cursor:pointer">⚗ <span id="plasma-count">0</span></div>
-      <button class="nbtn plasma-shop-btn" onclick="openPlasmaShop()" id="plasma-shop-nav-btn" style="display:none">⚗ Plasma Shop</button>
-      <button class="nbtn rebirth-btn" onclick="openRebirthModal()" title="Rebirth — spend coins for Plasma">♻ Rebirth</button>
-      <div class="ubadge" id="nav-user" onclick="openProfile(getU())" style="cursor:pointer;border-color:#553300;color:#ffaa44" title="View your profile">—</div>
-      <a href="https://discord.gg/tKCDpUHsFM" target="_blank" class="nbtn dis">Discord</a>
-      <a href="/gamble/index.html" class="nbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; text-decoration:none">🎰 Arcade</a>
-      <button class="nbtn" style="background:#001a2e;border-color:#003366;color:#4499ff" onclick="openSettings()">⚙ Settings</button>
 
-      <button class="nbtn out" onclick="doLogout()">Logout</button>
+    <!-- User chip -->
+    <div class="sb-user-chip" onclick="openProfile(getU())">
+      <div class="sb-avatar" id="sb-avatar">?</div>
+      <div class="sb-user-info">
+        <div class="sb-username" id="nav-user">—</div>
+        <div class="sb-coins">🧢 <span id="coin-count">0</span></div>
+      </div>
     </div>
-  </nav>
+
+    <!-- Main nav -->
+    <nav class="sb-nav">
+      <div class="sb-nav-section">PLAY</div>
+      <button class="sbtab on" id="sbtab-home" onclick="goTab('home')"><span class="sbt-icon">🏠</span><span class="sbt-label">Home</span></button>
+      <button class="sbtab" id="sbtab-race" onclick="goTab('race')"><span class="sbt-icon">🏁</span><span class="sbt-label">Race</span></button>
+      <a href="/gamble/index.html" class="sbtab" style="text-decoration:none"><span class="sbt-icon">🎰</span><span class="sbt-label">Arcade</span></a>
+
+      <div class="sb-nav-section">SOCIAL</div>
+      <button class="sbtab" id="sbtab-chat" onclick="goTab('chat')"><span class="sbt-icon">💬</span><span class="sbt-label">Chat</span></button>
+      <button class="sbtab" id="sbtab-dm" onclick="goTab('dm')">
+        <span class="sbt-icon">✉</span><span class="sbt-label">DMs</span>
+        <div class="sb-badge" id="dm-notif" style="display:none"></div>
+      </button>
+      <button class="sbtab" id="sbtab-teams" onclick="goTab('teams')"><span class="sbt-icon">👥</span><span class="sbt-label">Teams</span></button>
+      <button class="sbtab" id="sbtab-lb" onclick="goTab('lb')"><span class="sbt-icon">🏆</span><span class="sbt-label">Leaderboard</span></button>
+
+      <div class="sb-nav-section">ECONOMY</div>
+      <button class="sbtab" id="sbtab-shop" onclick="goTab('shop')"><span class="sbt-icon">🛒</span><span class="sbt-label">Shop</span></button>
+      <button class="sbtab" id="sbtab-items" onclick="goTab('items')"><span class="sbt-icon">🎁</span><span class="sbt-label">Items</span></button>
+      <button class="sbtab" id="sbtab-inventory" onclick="goTab('inventory')"><span class="sbt-icon">🎒</span><span class="sbt-label">Inventory</span></button>
+      <button class="sbtab" id="sbtab-trade" onclick="goTab('trade')">
+        <span class="sbt-icon">🤝</span><span class="sbt-label">Trade</span>
+        <div class="sb-badge" id="trade-notif" style="display:none"></div>
+      </button>
+
+      <div class="sb-nav-section">PROGRESS</div>
+      <button class="sbtab sbtab-bp" id="sbtab-battlepass" onclick="goTab('battlepass')">
+        <span class="sbt-icon">⚔</span><span class="sbt-label">Battle Pass</span>
+        <div class="sb-badge" id="bp-notif" style="display:none;background:#ffcc44;color:#000"></div>
+      </button>
+    </nav>
+
+    <!-- Bottom actions -->
+    <div class="sb-bottom">
+      <div class="sb-plasma-chip" id="plasma-display" style="display:none" onclick="openPlasmaShop()">
+        ⚗ <span id="plasma-count">0</span> Plasma
+      </div>
+      <div class="sb-actions">
+        <button class="sb-action-btn" onclick="openHub()" title="System Hub">🛠</button>
+        <button class="sb-action-btn" onclick="openSettings()" title="Settings">⚙</button>
+        <button class="sb-action-btn" onclick="openRebirthModal()" title="Rebirth">♻</button>
+        <a href="https://discord.gg/tKCDpUHsFM" target="_blank" class="sb-action-btn" title="Discord">💬</a>
+        <button class="sb-action-btn sb-action-out" onclick="doLogout()" title="Logout">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ── -->
+  <main class="main-content" id="main-content">
 
   <!-- HOME -->
   <div id="tab-home" class="tab on">
-    <div class="home-hero">
-      <div class="home-welcome">Welcome back, <span id="home-user" class="highlight">User</span></div>
-      <div class="home-tagline">Ready to climb the ranks today?</div>
-    </div>
-    
-    <div class="home-grid">
-      <div class="card-panel home-card stats">
-        <div class="h-card-title">Your Stats</div>
-        <div class="h-stat-row">
-          <div class="h-stat"><span class="h-val gold" id="h-coins">0</span><span class="h-lbl">Bottlecaps</span></div>
-          <div class="h-stat"><span class="h-val fire" id="h-streak">0</span><span class="h-lbl">Streak</span></div>
-        </div>
-        <div class="h-stat-row">
-          <div class="h-stat"><span class="h-val blue" id="h-wpm">0</span><span class="h-lbl">Best WPM</span></div>
-          <div class="h-stat"><span class="h-val purple" id="h-themes">0</span><span class="h-lbl">Themes</span></div>
-        </div>
-        <div class="h-stat-row" id="h-plasma-row" style="display:none">
-          <div class="h-stat"><span class="h-val" style="color:#aa44ff" id="h-plasma">0</span><span class="h-lbl">⚗ Plasma</span></div>
-          <div class="h-stat"><span class="h-val" style="color:#ffaa44" id="h-rebirths">0</span><span class="h-lbl">♻ Rebirths</span></div>
+
+    <!-- Hero -->
+    <div class="home-hero2">
+      <div class="home-hero-left">
+        <div class="home-greeting">Good <span id="home-time-greet">day</span>,</div>
+        <div class="home-username"><span id="home-user" class="highlight">Player</span></div>
+        <div class="home-tagline">Ready to climb the ranks?</div>
+        <div class="home-hero-btns">
+          <button class="home-cta-btn" onclick="goTab('race')">🏁 Start Racing</button>
+          <button class="home-cta-btn home-cta-sec" onclick="openHub()">🛠 System Hub</button>
         </div>
       </div>
-
-      <div class="card-panel home-card news">
-        <div class="h-card-title">Latest Updates</div>
-        <div id="home-news-list">
-          <div class="empty">Checking for updates...</div>
-        </div>
-        <button class="h-btn-small" onclick="openUpdateLog()">View All Updates</button>
-      </div>
-
-      <div class="card-panel home-card action">
-        <div class="h-card-title">Quick Start</div>
-        <div class="h-action-buttons">
-          <button class="rbtn" onclick="goTab('race')">🏁 Enter Race</button>
-          <button class="rbtn" style="background:#1a0a00;border-color:#8b4513;color:#ffaa44" onclick="openDPGame()">🐾 Pet DePoule</button>
-          <a href="/gamble/index.html" class="rbtn" style="background:#1a0d00; border-color:#664400; color:#cc7700; text-decoration:none; display:flex; align-items:center; justify-content:center;">🎰 Arcade</a>
-          <button class="rbtn" style="background:#330000;border-color:#660000;color:#ff4444" onclick="openHub()">🛠 System Hub</button>
-          
-          <div class="card-panel" style="margin-top:15px; border-color:#8b4513; background:rgba(139,69,19,.05)">
-            <div id="kingdom-info" style="font-size:.85rem; color:var(--text); text-align:center; margin-bottom:8px">Loading Kingdom...</div>
-            <div style="display:flex; gap:8px;">
-              <button id="king-manage-btn" class="rbtn" style="flex:1; font-size:.8rem; background:#4a3200; border-color:#ffd700; color:#ffd700; display:none" onclick="openKingdomManager()">👑 Manage</button>
-              <button class="rbtn" style="flex:1; font-size:.8rem; background:#001a1a; border-color:#00ddaa; color:#00ddaa" onclick="openRoyalLedger()">📜 Ledger</button>
-              <button id="election-btn" class="rbtn" style="flex:1; font-size:.8rem; background:#001a2e; border-color:#00c8ff; color:#00c8ff; display:none" onclick="openElectionModal()">🗳️ Election</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card-panel home-card community">
-        <div class="h-card-title">Community Hub</div>
-        <div class="h-social-info">
-          <div class="h-stat-row" style="margin-bottom:15px">
-            <div class="h-stat"><span class="h-val blue" id="h-team-name">None</span><span class="h-lbl">Team</span></div>
-            <div class="h-stat"><span class="h-val gold" id="h-unread-count">0</span><span class="h-lbl">Unread DMs</span></div>
-          </div>
-          <div class="h-action-buttons">
-            <button class="h-btn-small" onclick="goTab('teams')">Teams Dashboard</button>
-            <button class="h-btn-small" onclick="goTab('dm')">Direct Messages</button>
-            <button class="h-btn-small" onclick="goTab('chat')">Global Chat</button>
-            <a href="https://discord.gg/tKCDpUHsFM" target="_blank" class="h-btn-small" style="text-decoration:none; text-align:center">Join Discord</a>
-          </div>
-        </div>
+      <div class="home-hero-right">
+        <div class="home-stat-pill"><span class="hsp-val gold" id="h-coins">0</span><span class="hsp-lbl">Bottlecaps</span></div>
+        <div class="home-stat-pill"><span class="hsp-val fire" id="h-streak">0</span><span class="hsp-lbl">🔥 Streak</span></div>
+        <div class="home-stat-pill"><span class="hsp-val blue" id="h-wpm">0</span><span class="hsp-lbl">Best WPM</span></div>
+        <div class="home-stat-pill"><span class="hsp-val purple" id="h-themes">0</span><span class="hsp-lbl">Themes</span></div>
+        <div class="home-stat-pill" id="h-plasma-row" style="display:none"><span class="hsp-val" style="color:#aa44ff" id="h-plasma">0</span><span class="hsp-lbl">⚗ Plasma</span></div>
+        <div class="home-stat-pill" id="h-rebirths-pill" style="display:none"><span class="hsp-val" style="color:#ffaa44" id="h-rebirths">0</span><span class="hsp-lbl">♻ Rebirths</span></div>
       </div>
     </div>
-  </div>
+
+    <!-- Dashboard grid -->
+    <div class="home-dash">
+
+      <!-- Quick Actions -->
+      <div class="dash-card">
+        <div class="dash-card-title"><span>⚡</span> Quick Actions</div>
+        <div class="dash-actions-grid">
+          <button class="dash-action" onclick="goTab('race')">
+            <div class="da-icon">🏁</div>
+            <div class="da-label">Race</div>
+          </button>
+          <button class="dash-action" onclick="openDPGame()">
+            <div class="da-icon">🐾</div>
+            <div class="da-label">Pet</div>
+          </button>
+          <button class="dash-action" onclick="goTab('shop')">
+            <div class="da-icon">🛒</div>
+            <div class="da-label">Shop</div>
+          </button>
+          <button class="dash-action" onclick="goTab('battlepass')">
+            <div class="da-icon">⚔</div>
+            <div class="da-label">Pass</div>
+          </button>
+          <button class="dash-action" onclick="goTab('trade')">
+            <div class="da-icon">🤝</div>
+            <div class="da-label">Trade</div>
+          </button>
+          <a href="/gamble/index.html" class="dash-action" style="text-decoration:none">
+            <div class="da-icon">🎰</div>
+            <div class="da-label">Arcade</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Latest Updates -->
+      <div class="dash-card">
+        <div class="dash-card-title"><span>📋</span> Latest Updates</div>
+        <div id="home-news-list"><div class="empty">Checking for updates…</div></div>
+        <button class="dash-link-btn" onclick="openUpdateLog()">View All Updates →</button>
+      </div>
+
+      <!-- Community -->
+      <div class="dash-card">
+        <div class="dash-card-title"><span>👥</span> Community</div>
+        <div class="dash-community-row">
+          <div class="dcr-stat"><div class="dcr-val blue" id="h-team-name">None</div><div class="dcr-lbl">Team</div></div>
+          <div class="dcr-stat"><div class="dcr-val gold" id="h-unread-count">0</div><div class="dcr-lbl">Unread DMs</div></div>
+        </div>
+        <div class="dash-link-list">
+          <button class="dash-link-btn" onclick="goTab('teams')">Teams Dashboard →</button>
+          <button class="dash-link-btn" onclick="goTab('dm')">Direct Messages →</button>
+          <button class="dash-link-btn" onclick="goTab('chat')">Global Chat →</button>
+          <a href="https://discord.gg/tKCDpUHsFM" target="_blank" class="dash-link-btn" style="text-decoration:none">Join Discord →</a>
+        </div>
+      </div>
+
+      <!-- Kingdom -->
+      <div class="dash-card">
+        <div class="dash-card-title"><span>🏰</span> Kingdom</div>
+        <div id="kingdom-info" style="font-size:.9rem;color:var(--text);margin-bottom:12px">Loading Kingdom…</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="king-manage-btn" class="dash-kingdom-btn gold" style="display:none" onclick="openKingdomManager()">👑 Manage</button>
+          <button class="dash-kingdom-btn teal" onclick="openRoyalLedger()">📜 Ledger</button>
+          <button id="election-btn" class="dash-kingdom-btn blue" style="display:none" onclick="openElectionModal()">🗳️ Election</button>
+        </div>
+      </div>
+
+    </div><!-- /home-dash -->
+  </div><!-- /tab-home -->
 
   <!-- RACE -->
   <div id="tab-race" class="tab">
@@ -1431,6 +1492,9 @@
     </div>
   </div>
 </div>
+
+  </main><!-- /main-content -->
+</div><!-- /app -->
 
 <script src="script.js"></script>
 </body>
