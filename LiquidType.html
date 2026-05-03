@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>LiquidType v2.48</title>
+<title>LiquidType v2.47</title>
 <link rel="stylesheet" href="style.css">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -810,6 +810,62 @@
 </div>
 
 
+
+<!-- Garden Modal -->
+<div class="moverlay" id="garden-overlay" onclick="if(event.target===this)closeGarden()">
+  <div class="modal" style="max-width:700px;border-color:rgba(0,180,60,.3);background:linear-gradient(160deg,#020d02,#010a01);padding:0;overflow:hidden">
+    <!-- Header -->
+    <div style="padding:18px 22px 12px;border-bottom:1px solid rgba(0,180,60,.2);background:rgba(0,100,30,.12)">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-family:'Bebas Neue',cursive;font-size:1.6rem;letter-spacing:3px;color:#44ff88">🌱 YOUR GARDEN</div>
+          <div style="font-size:.75rem;color:rgba(100,255,140,.4);letter-spacing:1px">Plant · Grow · Harvest · Sell</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:1rem;color:#ffcc44;font-weight:700">🧢 <span id="garden-coins">0</span></div>
+        </div>
+      </div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:6px;margin-top:12px">
+        <button id="gtab-plot-btn" class="aps-tab-btn on" onclick="gSwitchTab('plot')">🌿 My Plot</button>
+        <button id="gtab-seeds-btn" class="aps-tab-btn" onclick="gSwitchTab('seeds')">🛒 Buy Seeds</button>
+        <button id="gtab-sell-btn" class="aps-tab-btn" onclick="gSwitchTab('sell')">💰 Sell Harvest</button>
+      </div>
+    </div>
+
+    <!-- Plot Tab -->
+    <div id="gtab-plot" style="padding:16px">
+      <div style="font-size:.72rem;color:rgba(100,255,140,.4);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase">Farm Plots — click an empty plot to plant a seed from your inventory</div>
+      <div id="garden-plot-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div style="font-size:.78rem;color:rgba(255,255,255,.4)">Seeds in bag:</div>
+        <div id="garden-bag" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+      </div>
+      <div style="margin-top:8px">
+        <button class="bsm give" style="background:rgba(0,150,50,.2);border-color:#00aa44;color:#44ff88" onclick="gardenExpandPlot()">➕ Buy Plot (+1 plot) — 500🧢</button>
+      </div>
+    </div>
+
+    <!-- Buy Seeds Tab -->
+    <div id="gtab-seeds" style="padding:16px;display:none">
+      <div style="font-size:.72rem;color:rgba(100,255,140,.4);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase">Seed Shop — buy seeds to plant in your plot</div>
+      <div id="garden-seed-shop" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px"></div>
+    </div>
+
+    <!-- Sell Tab -->
+    <div id="gtab-sell" style="padding:16px;display:none">
+      <div style="font-size:.72rem;color:rgba(100,255,140,.4);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase">Sell your harvested crops for bottlecaps</div>
+      <div id="garden-sell-list" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div id="garden-sell-empty" class="empty" style="display:none">No crops to sell. Harvest some plants first!</div>
+    </div>
+
+    <div style="padding:10px 22px 16px;border-top:1px solid rgba(0,180,60,.1)">
+      <button class="mbtnclose" style="background:rgba(0,100,30,.2);color:#44ff88;float:right" onclick="closeGarden()">Close</button>
+      <div style="clear:both"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Credits Modal -->
 <div class="moverlay" id="credits-overlay" onclick="if(event.target===this)closeCredits()">
   <div class="modal" style="max-width:520px;border-color:rgba(102,0,204,.4);box-shadow:0 0 60px rgba(102,0,204,.2)">
@@ -951,7 +1007,8 @@
         <button class="rbtn" style="background:#1a0a2e; border-color:#6600cc; color:#cc88ff; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openCredits();">✨ Credits</button>
         <button class="rbtn" style="background:#001a1a; border-color:#006688; color:#4ddbff; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openGgobsAI();">🤖 GgobsAI</button>
         <button class="rbtn" style="background:#0a001a; border-color:#440066; color:#cc44ff; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); goTab('society');">🏰 Society</button>
-        <button class="rbtn bank-hub-btn" style="grid-column:1/-1; font-size:.95rem; padding:14px 5px;" onclick="closeHub(); openBank();">🏦 Bank</button>
+        <button class="rbtn" style="background:#001a00;border-color:#00aa44;color:#44ff88;font-size:.85rem;padding:12px 5px;" onclick="closeHub();openGarden();">🌱 Garden</button>
+        <button class="rbtn bank-hub-btn" style="grid-column:1/-1;font-size:.95rem;padding:14px 5px;" onclick="closeHub();openBank();">🏦 Bank</button>
     </div>
     <button class="mbtnclose" onclick="closeHub()">Close</button>
     <div style="clear:both"></div>

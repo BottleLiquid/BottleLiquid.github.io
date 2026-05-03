@@ -7710,3 +7710,297 @@ async function toggleReaction(msgId, emoji) {
   msg.reactions = rxns;
   try { await db.collection('messages').doc(msgId).update({ reactions: rxns }); } catch(e){}
 }
+
+// ════════════════════════════════════════════════════════
+// 🌱 GARDEN SYSTEM — Grow a Garden
+// ════════════════════════════════════════════════════════
+
+// ── Seed definitions ──
+const GARDEN_SEEDS = [
+  // id, name, icon, buyCost, growMs, sellValue, rarity, desc
+  { id:'carrot',     name:'Carrot',      icon:'🥕', buy:25,   growMs:60000,    sell:40,   rarity:'Common',    rarityC:'#aaa',   desc:'Fast grower. Basic veggie.' },
+  { id:'tomato',     name:'Tomato',      icon:'🍅', buy:35,   growMs:120000,   sell:65,   rarity:'Common',    rarityC:'#aaa',   desc:'Classic crop. Easy money.' },
+  { id:'corn',       name:'Corn',        icon:'🌽', buy:50,   growMs:180000,   sell:100,  rarity:'Common',    rarityC:'#aaa',   desc:'Takes a while, pays off.' },
+  { id:'pumpkin',    name:'Pumpkin',     icon:'🎃', buy:80,   growMs:300000,   sell:180,  rarity:'Uncommon',  rarityC:'#ff8844',desc:'Big orange reward.' },
+  { id:'watermelon', name:'Watermelon',  icon:'🍉', buy:120,  growMs:480000,   sell:300,  rarity:'Uncommon',  rarityC:'#ff8844',desc:'Huge and juicy.' },
+  { id:'strawberry', name:'Strawberry',  icon:'🍓', buy:100,  growMs:240000,   sell:220,  rarity:'Uncommon',  rarityC:'#ff8844',desc:'Sweet and valuable.' },
+  { id:'grapes',     name:'Grapes',      icon:'🍇', buy:200,  growMs:600000,   sell:500,  rarity:'Rare',      rarityC:'#aa66ff',desc:'Takes time but worth it.' },
+  { id:'mango',      name:'Mango',       icon:'🥭', buy:300,  growMs:900000,   sell:800,  rarity:'Rare',      rarityC:'#aa66ff',desc:'Tropical treasure.' },
+  { id:'coconut',    name:'Coconut',     icon:'🥥', buy:400,  growMs:1200000,  sell:1100, rarity:'Rare',      rarityC:'#aa66ff',desc:'Hard to grow, big payout.' },
+  { id:'mushroom',   name:'Mushroom',    icon:'🍄', buy:500,  growMs:1800000,  sell:1800, rarity:'Epic',      rarityC:'#ff44aa',desc:'Mysterious. Very valuable.' },
+  { id:'rainbow',    name:'Rainbow Fruit',icon:'🌈',buy:800,  growMs:3600000,  sell:3500, rarity:'Legendary', rarityC:'#ffcc00',desc:'1-hour grow. Massive reward.' },
+  { id:'crystal',    name:'Crystal Berry',icon:'💎',buy:1500, growMs:7200000,  sell:8000, rarity:'Mythic',    rarityC:'#00eeff',desc:'2 hours. Insane value.' },
+];
+
+const GARDEN_SEED_MAP = Object.fromEntries(GARDEN_SEEDS.map(s => [s.id, s]));
+
+// ── Helpers ──
+function gGetData() {
+  if (!UC) return null;
+  if (!UC.garden) UC.garden = { plots: 4, planted: {}, bag: {}, harvest: {} };
+  if (!UC.garden.plots) UC.garden.plots = 4;
+  if (!UC.garden.planted) UC.garden.planted = {};
+  if (!UC.garden.bag) UC.garden.bag = {};
+  if (!UC.garden.harvest) UC.garden.harvest = {};
+  return UC.garden;
+}
+
+function gSave() {
+  if (!UC || !getU()) return;
+  return dbUpdateUser(getU(), { garden: UC.garden });
+}
+
+function gFormatTime(ms) {
+  if (ms <= 0) return 'Ready!';
+  const s = Math.ceil(ms / 1000);
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.ceil(s/60) + 'm';
+  return (s/3600).toFixed(1) + 'h';
+}
+
+// ── Tab switching ──
+function gSwitchTab(tab) {
+  ['plot','seeds','sell'].forEach(t => {
+    document.getElementById('gtab-'+t).style.display = t===tab?'block':'none';
+    const btn = document.getElementById('gtab-'+t+'-btn');
+    if (btn) btn.classList.toggle('on', t===tab);
+  });
+  if (tab==='plot')  renderGardenPlot();
+  if (tab==='seeds') renderGardenShop();
+  if (tab==='sell')  renderGardenSell();
+}
+
+// ── Open / Close ──
+function openGarden() {
+  if (!UC) { showToast('Log in first!'); return; }
+  gGetData();
+  document.getElementById('garden-overlay').classList.add('on');
+  document.getElementById('garden-coins').textContent = (UC.coins||0).toLocaleString();
+  gSwitchTab('plot');
+  // Start live refresh for growing plants
+  window._gardenTimer = setInterval(() => {
+    const plotTab = document.getElementById('gtab-plot');
+    if (plotTab && plotTab.style.display !== 'none') renderGardenPlot();
+  }, 3000);
+}
+function closeGarden() {
+  document.getElementById('garden-overlay').classList.remove('on');
+  clearInterval(window._gardenTimer);
+}
+
+// ── Render Plot ──
+function renderGardenPlot() {
+  const g = gGetData(); if (!g) return;
+  document.getElementById('garden-coins').textContent = (UC.coins||0).toLocaleString();
+  const grid = document.getElementById('garden-plot-grid');
+  const now = Date.now();
+  let html = '';
+
+  for (let i = 0; i < g.plots; i++) {
+    const planted = g.planted[i];
+    if (!planted) {
+      // Empty plot
+      html += `<div class="garden-plot empty" onclick="gardenSelectPlot(${i})" title="Click to plant">
+        <div style="font-size:2rem;opacity:.3">🟫</div>
+        <div style="font-size:.65rem;color:rgba(255,255,255,.3)">Empty</div>
+        <div style="font-size:.55rem;color:rgba(100,255,140,.4)">Tap to plant</div>
+      </div>`;
+    } else {
+      const seed = GARDEN_SEED_MAP[planted.id];
+      const elapsed = now - planted.plantedAt;
+      const remaining = (planted.plantedAt + seed.growMs) - now;
+      const done = remaining <= 0;
+      const pct = Math.min(100, Math.round((elapsed / seed.growMs) * 100));
+
+      html += `<div class="garden-plot ${done?'ready':'growing'}" onclick="${done?'gardenHarvest('+i+')':''}">
+        <div style="font-size:2rem">${seed.icon}</div>
+        <div style="font-size:.7rem;font-weight:700;color:${done?'#44ff88':'var(--text)'}">${seed.name}</div>
+        ${done
+          ? `<div style="font-size:.65rem;color:#44ff88;font-weight:700;letter-spacing:1px">✅ HARVEST!</div>`
+          : `<div style="font-size:.6rem;color:rgba(255,255,255,.4)">${gFormatTime(remaining)}</div>
+             <div style="width:100%;height:4px;background:rgba(255,255,255,.08);border-radius:4px;margin-top:3px;overflow:hidden">
+               <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#00aa44,#44ff88);border-radius:4px"></div>
+             </div>`
+        }
+      </div>`;
+    }
+  }
+  grid.innerHTML = html;
+
+  // Render bag
+  const bag = document.getElementById('garden-bag');
+  const bagEntries = Object.entries(g.bag).filter(([,q])=>q>0);
+  bag.innerHTML = bagEntries.length
+    ? bagEntries.map(([id,qty]) => {
+        const s = GARDEN_SEED_MAP[id];
+        return s ? `<div class="garden-seed-tag" onclick="gardenSelectSeedFromBag('${id}')" title="Select ${s.name} to plant">${s.icon} ${s.name} ×${qty}</div>` : '';
+      }).join('')
+    : '<span style="font-size:.75rem;color:rgba(255,255,255,.2)">Empty — buy seeds first</span>';
+}
+
+// ── Plant selection ──
+let _gardenSelectedSeed = null;
+function gardenSelectSeedFromBag(seedId) {
+  _gardenSelectedSeed = seedId;
+  const s = GARDEN_SEED_MAP[seedId];
+  showToast(`🌱 ${s.name} selected — now tap an empty plot!`);
+  // Highlight empty plots
+  document.querySelectorAll('.garden-plot.empty').forEach(el => el.style.borderColor='#44ff88');
+}
+
+function gardenSelectPlot(plotIndex) {
+  if (!_gardenSelectedSeed) { showToast('Select a seed from your bag first!'); return; }
+  const g = gGetData();
+  if (g.planted[plotIndex]) { showToast('Plot is already occupied!'); return; }
+  const qty = g.bag[_gardenSelectedSeed] || 0;
+  if (qty <= 0) { showToast('No seeds left!'); _gardenSelectedSeed=null; return; }
+  // Plant it
+  g.bag[_gardenSelectedSeed] = qty - 1;
+  if (g.bag[_gardenSelectedSeed] <= 0) delete g.bag[_gardenSelectedSeed];
+  g.planted[plotIndex] = { id: _gardenSelectedSeed, plantedAt: Date.now() };
+  _gardenSelectedSeed = null;
+  gSave().then(() => { showToast(`🌱 Planted! Come back when it's ready.`); renderGardenPlot(); });
+}
+
+// ── Harvest ──
+function gardenHarvest(plotIndex) {
+  const g = gGetData();
+  const planted = g.planted[plotIndex];
+  if (!planted) return;
+  const seed = GARDEN_SEED_MAP[planted.id];
+  if (!seed) return;
+  const remaining = (planted.plantedAt + seed.growMs) - Date.now();
+  if (remaining > 0) { showToast(`Still growing! ${gFormatTime(remaining)} left.`); return; }
+  // Move to harvest bag
+  g.harvest[planted.id] = (g.harvest[planted.id] || 0) + 1;
+  delete g.planted[plotIndex];
+  gSave().then(() => { showToast(`✅ Harvested ${seed.icon} ${seed.name}! Go sell it.`); renderGardenPlot(); });
+}
+
+// ── Expand plot ──
+async function gardenExpandPlot() {
+  const g = gGetData(); if (!g) return;
+  const cost = 500 + (g.plots - 4) * 300;
+  if (g.plots >= 16) { showToast('Max plots reached (16)!'); return; }
+  if ((UC.coins||0) < cost) { showToast(`Need ${cost}🧢!`); return; }
+  UC.coins -= cost;
+  g.plots++;
+  await dbUpdateUser(getU(), { coins: UC.coins, garden: g });
+  refreshCoins();
+  document.getElementById('garden-coins').textContent = (UC.coins).toLocaleString();
+  showToast(`✅ New plot added! Now you have ${g.plots} plots.`);
+  renderGardenPlot();
+}
+
+// ── Seed Shop ──
+function renderGardenShop() {
+  document.getElementById('garden-coins').textContent = (UC.coins||0).toLocaleString();
+  const el = document.getElementById('garden-seed-shop');
+  el.innerHTML = GARDEN_SEEDS.map(seed => {
+    const canAfford = (UC.coins||0) >= seed.buy;
+    const g = gGetData();
+    const inBag = g.bag[seed.id] || 0;
+    return `<div class="garden-shop-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div style="font-size:1.8rem">${seed.icon}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:.88rem">${seed.name} ${inBag>0?`<span style="color:#44ff88;font-size:.72rem">×${inBag} in bag</span>`:''}</div>
+          <div style="font-size:.62rem;color:${seed.rarityC};letter-spacing:1px">${seed.rarity.toUpperCase()}</div>
+        </div>
+        <div style="text-align:right;font-size:.75rem;color:rgba(100,255,140,.6)">sells: ${seed.sell}🧢</div>
+      </div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.4);margin-bottom:8px">${seed.desc} • grows in ${gFormatTime(seed.growMs)}</div>
+      <button class="bsm give" style="width:100%;background:rgba(0,150,50,.2);border-color:#00aa44;color:#44ff88;${!canAfford?'opacity:.4;cursor:not-allowed':''}"
+        onclick="gardenBuySeed('${seed.id}')" ${!canAfford?'disabled':''}>
+        Buy for ${seed.buy}🧢
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function gardenBuySeed(seedId) {
+  const seed = GARDEN_SEED_MAP[seedId];
+  if (!seed) return;
+  if ((UC.coins||0) < seed.buy) { showToast('Not enough bottlecaps!'); return; }
+  const g = gGetData();
+  UC.coins -= seed.buy;
+  g.bag[seedId] = (g.bag[seedId] || 0) + 1;
+  await dbUpdateUser(getU(), { coins: UC.coins, garden: g });
+  refreshCoins();
+  document.getElementById('garden-coins').textContent = (UC.coins).toLocaleString();
+  showToast(`🛒 Bought ${seed.icon} ${seed.name} seed!`);
+  renderGardenShop();
+}
+
+// ── Sell Harvest ──
+function renderGardenSell() {
+  document.getElementById('garden-coins').textContent = (UC.coins||0).toLocaleString();
+  const g = gGetData();
+  const harvested = Object.entries(g.harvest||{}).filter(([,q])=>q>0);
+  const listEl = document.getElementById('garden-sell-list');
+  const emptyEl = document.getElementById('garden-sell-empty');
+
+  if (!harvested.length) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  // Total value
+  const total = harvested.reduce((sum,[id,qty]) => sum + ((GARDEN_SEED_MAP[id]?.sell||0)*qty), 0);
+
+  listEl.innerHTML = `
+    <div style="background:rgba(0,150,50,.08);border:1px solid rgba(0,200,80,.2);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="font-size:.72rem;color:rgba(100,255,140,.5);letter-spacing:1px;margin-bottom:2px">TOTAL VALUE</div>
+      <div style="font-size:1.5rem;color:#44ff88;font-weight:700;font-family:'Bebas Neue',cursive;letter-spacing:2px">🧢 ${total.toLocaleString()}</div>
+      <button class="bsm give" style="margin-top:8px;background:rgba(0,180,60,.25);border-color:#00cc44;color:#44ff88;width:100%;font-size:.9rem;padding:9px" onclick="gardenSellAll()">💰 Sell All Crops</button>
+    </div>
+    ${harvested.map(([id,qty]) => {
+      const s = GARDEN_SEED_MAP[id];
+      if (!s) return '';
+      const val = s.sell * qty;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px">
+        <div style="font-size:1.5rem">${s.icon}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:.88rem">${s.name} <span style="color:rgba(255,255,255,.4)">×${qty}</span></div>
+          <div style="font-size:.7rem;color:${s.rarityC}">${s.rarity}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="color:#ffcc44;font-weight:700;font-size:.9rem">🧢 ${val.toLocaleString()}</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.3)">${s.sell} each</div>
+        </div>
+        <button class="bsm give" style="background:rgba(0,150,50,.2);border-color:#00aa44;color:#44ff88" onclick="gardenSellOne('${id}')">Sell</button>
+      </div>`;
+    }).join('')}`;
+}
+
+async function gardenSellAll() {
+  const g = gGetData();
+  const harvested = Object.entries(g.harvest||{}).filter(([,q])=>q>0);
+  if (!harvested.length) { showToast('Nothing to sell!'); return; }
+  let total = 0;
+  harvested.forEach(([id,qty]) => { total += (GARDEN_SEED_MAP[id]?.sell||0)*qty; });
+  UC.coins = (UC.coins||0) + total;
+  g.harvest = {};
+  await dbUpdateUser(getU(), { coins: UC.coins, garden: g });
+  refreshCoins();
+  document.getElementById('garden-coins').textContent = (UC.coins).toLocaleString();
+  showToast(`💰 Sold all crops for 🧢${total.toLocaleString()}!`);
+  renderGardenSell();
+}
+
+async function gardenSellOne(seedId) {
+  const g = gGetData();
+  const qty = g.harvest[seedId] || 0;
+  if (qty <= 0) return;
+  const seed = GARDEN_SEED_MAP[seedId];
+  UC.coins = (UC.coins||0) + seed.sell;
+  g.harvest[seedId] = qty - 1;
+  if (g.harvest[seedId] <= 0) delete g.harvest[seedId];
+  await dbUpdateUser(getU(), { coins: UC.coins, garden: g });
+  refreshCoins();
+  document.getElementById('garden-coins').textContent = (UC.coins).toLocaleString();
+  showToast(`💰 Sold ${seed.icon} ${seed.name} for 🧢${seed.sell}!`);
+  renderGardenSell();
+}

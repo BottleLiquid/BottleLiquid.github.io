@@ -2151,3 +2151,25 @@ body.theme-corruption{animation:corruptionGlitch .4s steps(1) infinite}
   .home-dash { grid-template-columns: 1fr; }
   .dash-actions-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ── Garden System ── */
+#garden-overlay .modal { border-color: rgba(0,180,60,.3); }
+.garden-plot {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 6px;
+  min-height:90px;cursor:pointer;transition:.18s;background:rgba(0,0,0,.3);text-align:center;gap:2px;
+}
+.garden-plot.empty:hover { border-color:#44ff88;background:rgba(0,150,50,.08); }
+.garden-plot.growing { border-color:rgba(255,200,50,.25);background:rgba(60,40,0,.3); }
+.garden-plot.ready { border-color:#44ff88;background:rgba(0,150,50,.12);animation:gardenPulse 1.2s ease-in-out infinite; }
+@keyframes gardenPulse { 0%,100%{box-shadow:0 0 0 0 rgba(68,255,136,.3)} 50%{box-shadow:0 0 0 6px rgba(68,255,136,0)} }
+.garden-seed-tag {
+  padding:4px 10px;border-radius:12px;background:rgba(0,150,50,.15);border:1px solid rgba(0,200,80,.3);
+  font-size:.75rem;cursor:pointer;transition:.15s;color:#88ffaa;
+}
+.garden-seed-tag:hover { background:rgba(0,200,80,.25);border-color:#44ff88; }
+.garden-seed-tag.selected { background:rgba(0,200,80,.35);border-color:#44ff88;color:#44ff88;font-weight:700; }
+.garden-shop-card {
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;transition:.15s;
+}
+.garden-shop-card:hover { border-color:rgba(0,200,80,.3); }
