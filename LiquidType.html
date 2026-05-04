@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>LiquidType v2.48</title>
+<title>LiquidType v2.47</title>
 <link rel="stylesheet" href="style.css">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -712,7 +712,57 @@
         </div>
       </div>
       <div class="msec" style="margin-top:18px"><div class="msec-ttl dp">🚩 Reports</div><div id="dp-reports"><div class="empty">Loading…</div></div></div>
-      <div class="msec" style="margin-top:18px"><div class="msec-ttl dp">💬 Remove Messages</div><div id="dp-chat"></div></div>
+      <div class="msec" style="margin-top:18px">
+            <div class="msec-ttl dp">🌱 Garden Seed Maker</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div>
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Seed Name</div>
+                <input id="dp-seed-name" type="text" placeholder="e.g. Golden Apple" maxlength="30" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.88rem;outline:none">
+              </div>
+              <div>
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Emoji/Icon</div>
+                <input id="dp-seed-icon" type="text" placeholder="🍎" maxlength="4" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-size:1.2rem;outline:none;text-align:center">
+              </div>
+              <div>
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Buy Price (🧢)</div>
+                <input id="dp-seed-buy" type="number" value="100" min="1" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.88rem;outline:none">
+              </div>
+              <div>
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Sell Price (🧢)</div>
+                <input id="dp-seed-sell" type="number" value="250" min="1" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.88rem;outline:none">
+              </div>
+              <div>
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Grow Time (minutes)</div>
+                <input id="dp-seed-grow" type="number" value="5" min="1" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.88rem;outline:none">
+              </div>
+              <div>
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Rarity</div>
+                <select id="dp-seed-rarity" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.88rem;outline:none">
+                  <option value="Common|#aaa">Common</option>
+                  <option value="Uncommon|#ff8844">Uncommon</option>
+                  <option value="Rare|#aa66ff">Rare</option>
+                  <option value="Epic|#ff44aa">Epic</option>
+                  <option value="Legendary|#ffcc00">Legendary</option>
+                  <option value="Mythic|#00eeff">Mythic</option>
+                </select>
+              </div>
+              <div style="grid-column:1/-1">
+                <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Description</div>
+                <input id="dp-seed-desc" type="text" placeholder="Short description..." maxlength="80" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:.85rem;outline:none">
+              </div>
+              <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px">
+                <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:.85rem;color:var(--muted)">
+                  <input type="checkbox" id="dp-seed-multi" style="width:16px;height:16px">
+                  ♻ Multi-Harvest (regrows after each harvest)
+                </label>
+              </div>
+            </div>
+            <button class="bsm give" style="padding:9px;font-size:.88rem;background:rgba(0,150,50,.2);border-color:#00aa44;color:#44ff88" onclick="dpCreateSeed()">🌱 Create Custom Seed</button>
+            <div style="margin-top:10px;font-family:'Bebas Neue',cursive;font-size:.85rem;letter-spacing:2px;color:rgba(100,255,140,.4)">Custom Seeds</div>
+            <div id="dp-seeds-list" style="margin-top:6px"></div>
+          </div>
+
+          <div class="msec" style="margin-top:18px"><div class="msec-ttl dp">💬 Remove Messages</div><div id="dp-chat"></div></div>
     </div>
     <button class="mbtnclose" style="background:rgba(0,200,150,.1);color:#00c896" onclick="closeDP()">Close</button><div style="clear:both"></div>
   </div>
