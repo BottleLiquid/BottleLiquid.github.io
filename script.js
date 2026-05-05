@@ -8157,7 +8157,8 @@ function renderGardenPlot() {
         <div style="font-size:.55rem;color:rgba(100,255,140,.4)">Tap to plant</div>
       </div>`;
     } else {
-      const seed = GARDEN_SEED_MAP[planted.id];
+      const seed = getGardenSeedDef(planted.id);
+      if (!seed) { html += `<div class="garden-plot empty"><div style="font-size:.65rem;color:rgba(255,80,80,.5)">Missing seed data</div></div>`; continue; }
       const elapsed = now - planted.plantedAt;
       const remaining = (planted.plantedAt + seed.growMs) - now;
       const done = remaining <= 0;
@@ -8183,7 +8184,7 @@ function renderGardenPlot() {
   const bagEntries = Object.entries(g.bag).filter(([,q])=>q>0);
   bag.innerHTML = bagEntries.length
     ? bagEntries.map(([id,qty]) => {
-        const s = GARDEN_SEED_MAP[id];
+        const s = getGardenSeedDef(id);
         return s ? `<div class="garden-seed-tag" onclick="gardenSelectSeedFromBag('${id}')" title="Select ${s.name} to plant">${s.icon} ${s.name} ×${qty}</div>` : '';
       }).join('')
     : '<span style="font-size:.75rem;color:rgba(255,255,255,.2)">Empty — buy seeds first</span>';
@@ -8193,7 +8194,7 @@ function renderGardenPlot() {
 let _gardenSelectedSeed = null;
 function gardenSelectSeedFromBag(seedId) {
   _gardenSelectedSeed = seedId;
-  const s = GARDEN_SEED_MAP[seedId];
+  const s = getGardenSeedDef(seedId);
   showToast(`🌱 ${s.name} selected — now tap an empty plot!`);
   // Highlight empty plots
   document.querySelectorAll('.garden-plot.empty').forEach(el => el.style.borderColor='#44ff88');
@@ -8300,7 +8301,7 @@ function renderGardenSell() {
   emptyEl.style.display = 'none';
 
   // Total value
-  const total = harvested.reduce((sum,[id,qty]) => sum + ((GARDEN_SEED_MAP[id]?.sell||0)*qty), 0);
+  const total = harvested.reduce((sum,[id,qty]) => sum + ((getGardenSeedDef(id)?.sell||0)*qty), 0);
 
   listEl.innerHTML = `
     <div style="background:rgba(0,150,50,.08);border:1px solid rgba(0,200,80,.2);border-radius:10px;padding:12px;margin-bottom:8px">
@@ -8332,7 +8333,7 @@ async function gardenSellAll() {
   const harvested = Object.entries(g.harvest||{}).filter(([,q])=>q>0);
   if (!harvested.length) { showToast('Nothing to sell!'); return; }
   let total = 0;
-  harvested.forEach(([id,qty]) => { total += (GARDEN_SEED_MAP[id]?.sell||0)*qty; });
+  harvested.forEach(([id,qty]) => { total += (getGardenSeedDef(id)?.sell||0)*qty; });
   UC.coins = (UC.coins||0) + total;
   g.harvest = {};
   await dbUpdateUser(getU(), { coins: UC.coins, garden: g });
