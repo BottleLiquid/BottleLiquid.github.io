@@ -169,6 +169,7 @@
 
       <div class="sb-nav-section">ECONOMY</div>
       <button class="sbtab" id="sbtab-shop" onclick="goTab('shop')"><span class="sbt-icon">🛒</span><span class="sbt-label">Shop</span></button>
+      <button class="sbtab" id="sbtab-pfp" onclick="goTab('pfp')"><span class="sbt-icon">🖼</span><span class="sbt-label">PFP Shop</span></button>
       <button class="sbtab" id="sbtab-items" onclick="goTab('items')"><span class="sbt-icon">🎁</span><span class="sbt-label">Items</span></button>
       <button class="sbtab" id="sbtab-inventory" onclick="goTab('inventory')"><span class="sbt-icon">🎒</span><span class="sbt-label">Inventory</span></button>
       <button class="sbtab" id="sbtab-trade" onclick="goTab('trade')">
@@ -464,6 +465,16 @@
     </div>
   </div>
 
+  <!-- PFP SHOP -->
+  <div id="tab-pfp" class="tab">
+    <div class="shop-hdr">
+      <div class="shop-ttl">🖼 PFP Shop</div>
+      <div class="shop-bal">🧢 <span id="pfp-shop-coins">0</span> bottlecaps</div>
+    </div>
+    <div style="color:var(--muted);font-size:.85rem;padding:0 20px 8px;max-width:800px">Buy and equip profile pictures. Your PFP appears in chat, your profile, and the sidebar.</div>
+    <div class="pfp-shop-grid" id="pfp-shop-grid"></div>
+  </div>
+
   <!-- SHOP -->
   <div id="tab-shop" class="tab">
     <div class="shop-hdr"><div class="shop-ttl">Theme Shop</div><div class="shop-bal">🧢 <span id="shop-coins">0</span> bottlecaps</div></div>
@@ -557,6 +568,26 @@
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Custom PFP Upload Modal -->
+<div class="moverlay" id="custom-pfp-overlay">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <div class="mttl" style="color:var(--accent2)">📷 Custom PFP</div>
+    <div class="msub">Upload your own profile picture</div>
+    <div id="custom-pfp-preview" style="margin:16px auto;width:100px;height:100px;border-radius:50%;background:var(--card);border:2px dashed rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden">📷</div>
+    <div style="margin:12px 0">
+      <label style="display:inline-block;padding:10px 20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:8px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:.95rem;color:var(--text)">
+        Choose Image
+        <input type="file" id="custom-pfp-file" accept="image/*" style="display:none" onchange="previewCustomPfp()">
+      </label>
+    </div>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px">Max 8MB • JPG, PNG, GIF, WebP</div>
+    <button id="custom-pfp-submit" onclick="submitCustomPfp()" style="padding:12px 30px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;cursor:pointer;margin-bottom:8px">Set as PFP</button>
+    <br>
+    <button class="mbtnclose" onclick="closeCustomPfpModal()">Cancel</button>
+    <div style="clear:both"></div>
   </div>
 </div>
 

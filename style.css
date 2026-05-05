@@ -2316,3 +2316,119 @@ body.theme-corruption{animation:corruptionGlitch .4s steps(1) infinite}
   0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
   100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
 }
+
+/* ── PFP SHOP ──────────────────────────────────────────── */
+.pfp-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+  padding: 0 20px 30px;
+  max-width: 1200px;
+}
+.pfp-card {
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.pfp-card:hover {
+  border-color: rgba(255,255,255,.2);
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+.pfp-card-equipped {
+  border-color: var(--accent2) !important;
+  box-shadow: 0 0 16px rgba(204,0,0,.3) !important;
+}
+.pfp-card-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255,255,255,.1);
+  flex-shrink: 0;
+}
+.pfp-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.pfp-card-placeholder {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pfp-card-name {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1rem;
+  letter-spacing: 1px;
+  color: var(--text);
+  text-align: center;
+}
+.pfp-card-desc {
+  font-size: .72rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.4;
+}
+.pfp-card-price {
+  font-size: .8rem;
+  color: var(--muted);
+  font-weight: 700;
+}
+.pfp-card-action { margin-top: 4px; width: 100%; }
+.pfp-btn {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 7px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: .15s;
+}
+.pfp-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.pfp-btn-equip { background: rgba(0,200,100,.15); border: 1px solid #00aa44; color: #44ff88; }
+.pfp-btn-buy { background: var(--accent); color: #fff; }
+.pfp-btn-upload { background: rgba(0,150,255,.15); border: 1px solid #0066cc; color: #4daaff; }
+.pfp-btn-poor { opacity: .45; cursor: not-allowed !important; }
+.pfp-equip-badge {
+  width: 100%;
+  padding: 8px;
+  border-radius: 7px;
+  background: rgba(204,0,0,.15);
+  border: 1px solid rgba(204,0,0,.4);
+  color: var(--accent2);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: .9rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: .5px;
+}
+
+/* Make cavatar support images cleanly */
+.cavatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.sb-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.prof-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+
+@media (max-width: 600px) {
+  .pfp-shop-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; padding: 0 12px 24px; }
+}
+/* ── END PFP SHOP ─────────────────────────────────────── */
