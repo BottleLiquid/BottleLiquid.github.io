@@ -849,7 +849,7 @@ function enterApp() {
   if (sbAv) sbAv.textContent = UC.username.charAt(0).toUpperCase();
   refreshCoins(); applyTheme(UC.activeTheme||'default',UC.gradientColors||null); deleteOldMessages();
   goTab('home');
-  renderShop(); startChatListener(); renderLB(); startDMListener(); loadBannedWords(); syncActiveAbilities(); checkTrollNotif(); applyActiveTrollEffects(); startTrollEffectWatcher(); checkFeudalStatus(); startPresence();
+  renderShop(); startChatListener(); renderLB(); startDMListener(); loadBannedWords(); syncActiveAbilities(); checkTrollNotif(); applyActiveTrollEffects(); startTrollEffectWatcher(); checkFeudalStatus(); startPresence(); startGlobalEventListener();
   setTimeout(checkBankLoanOnLogin, 2000);
   loadDPThemesIntoShop().then(()=>{if(UC&&UC.activeTheme&&UC.activeTheme.startsWith("dp_"))applyDPTheme(UC.activeTheme);});
   if(UC.activeMods&&UC.activeMods.length){activeMods=new Set(UC.activeMods);applyAllMods();}
@@ -4707,6 +4707,9 @@ function applyDPTheme(id) {
 // ── APS PANEL ─────────────────────────────────────────────────
 let APS_PW = '';
 let apsOpen = false;
+// ABP password is NEVER stored in source code — only loaded from Firebase
+let ABP_PW = '';
+let abpOpen = false;
 
 // ═══════════════════════════════════════════════════════════════
 // PANEL PASSWORDS - SECURITY NOTICE
@@ -4721,17 +4724,19 @@ let apsOpen = false;
 //   mgr: 'petershows'
 //   mods: 'finnflexeshisdihtoalice'
 //   aps: 'depouleflexeshisdihtoalice'
+//   abp: (set directly in Firebase only — never shown in code)
 // ═══════════════════════════════════════════════════════════════
 
 // Load live passwords from Firebase
 async function loadPanelPasswords() {
   if (!FB_READY) {
-    // Fallback for local storage mode - use default passwords
     ADMIN_PW = 'randomflexeshisdihtoalice';
     DP_PW = 'beer';
     MGR_PW = 'petershows';
     MOD_PW = 'finnflexeshisdihtoalice';
     APS_PW = 'depouleflexeshisdihtoalice';
+    // ABP intentionally left blank — cannot function without Firebase
+    ABP_PW = '';
     return;
   }
   
@@ -4744,31 +4749,37 @@ async function loadPanelPasswords() {
       if (d.mgr)   MGR_PW   = d.mgr;
       if (d.mods)  MOD_PW   = d.mods;
       if (d.aps)   APS_PW   = d.aps;
+      if (d.abp)   ABP_PW   = d.abp;
+      else {
+        // abp field missing — set it to 'full' now
+        ABP_PW = 'full';
+        await db.collection('settings').doc('passwords').update({ abp: 'full' });
+      }
     } else {
-      // No passwords in Firebase yet - set defaults and save them
       ADMIN_PW = 'randomflexeshisdihtoalice';
       DP_PW = 'beer';
       MGR_PW = 'petershows';
       MOD_PW = 'finnflexeshisdihtoalice';
       APS_PW = 'depouleflexeshisdihtoalice';
-      
-      // Save defaults to Firebase
+      ABP_PW = 'full';
+      // Save all defaults including ABP to Firebase
       await db.collection('settings').doc('passwords').set({
         admin: ADMIN_PW,
         dp: DP_PW,
         mgr: MGR_PW,
         mods: MOD_PW,
-        aps: APS_PW
+        aps: APS_PW,
+        abp: ABP_PW
       });
     }
   } catch(e) { 
     console.warn('Could not load panel passwords:', e);
-    // Use defaults if there's an error
     ADMIN_PW = 'randomflexeshisdihtoalice';
     DP_PW = 'beer';
     MGR_PW = 'petershows';
     MOD_PW = 'finnflexeshisdihtoalice';
     APS_PW = 'depouleflexeshisdihtoalice';
+    ABP_PW = '';
   }
 }
 
@@ -6951,6 +6962,273 @@ async function checkTradeNotifs() {
 // Poll every 30s
 setInterval(checkTradeNotifs, 30000);
 setTimeout(checkTradeNotifs, 3000);
+
+// ══════════════════════════════════════════════════════════
+// 👁  ABP — ADMIN BOSS PANEL
+// ══════════════════════════════════════════════════════════
+
+function openABP() {
+  document.getElementById('abp-overlay').classList.add('on');
+  document.getElementById('abp-pw-input').value = '';
+  document.getElementById('abp-err').textContent = '';
+  if (abpOpen) abpRenderPasswords();
+}
+
+function closeABP() {
+  document.getElementById('abp-overlay').classList.remove('on');
+}
+
+function tryABP() {
+  const v = document.getElementById('abp-pw-input').value;
+  if (!ABP_PW) {
+    document.getElementById('abp-err').textContent = 'ABP password not set in Firebase.';
+    return;
+  }
+  if (v === ABP_PW) {
+    abpOpen = true;
+    document.getElementById('abp-lock').style.display = 'none';
+    document.getElementById('abp-open').style.display = 'block';
+    abpRenderPasswords();
+    abpPollEventStatus();
+  } else {
+    document.getElementById('abp-err').textContent = 'Wrong password.';
+  }
+}
+
+// Render password manager grid
+async function abpRenderPasswords() {
+  const grid = document.getElementById('abp-pw-grid');
+  if (!FB_READY) { grid.innerHTML = '<div class="empty">Firebase required.</div>'; return; }
+  
+  const doc = await db.collection('settings').doc('passwords').get();
+  const d = doc.exists ? doc.data() : {};
+  
+  const panels = [
+    { key: 'admin', label: '⚙ Admin',      color: '#cc7700' },
+    { key: 'dp',    label: '😋 DePoule',    color: '#00aa66' },
+    { key: 'mgr',   label: '🛠 Manager',    color: '#aa77ff' },
+    { key: 'mods',  label: '➕ MODS',        color: '#88ff44' },
+    { key: 'aps',   label: '🛡 APS',         color: '#4466ff' },
+    { key: 'abp',   label: '👁 ABP',         color: '#00c8ff' },
+  ];
+  
+  grid.innerHTML = panels.map(p => `
+    <div class="abp-pw-row">
+      <div class="abp-pw-label" style="color:${p.color}">${p.label}</div>
+      <input class="abp-pw-field" id="abp-field-${p.key}" type="text" value="${esc(d[p.key] || '')}" placeholder="(not set)">
+      <button class="abp-pw-save-btn" onclick="abpSavePassword('${p.key}')">Save</button>
+    </div>
+  `).join('');
+}
+
+async function abpSavePassword(key) {
+  if (!FB_READY) { showToast('Firebase required.'); return; }
+  const val = document.getElementById('abp-field-' + key).value.trim();
+  if (!val) { showToast('Password cannot be empty.'); return; }
+  
+  await db.collection('settings').doc('passwords').update({ [key]: val });
+  
+  // Refresh local variable immediately
+  if (key === 'admin') ADMIN_PW = val;
+  if (key === 'dp')    DP_PW    = val;
+  if (key === 'mgr')   MGR_PW   = val;
+  if (key === 'mods')  MOD_PW   = val;
+  if (key === 'aps')   APS_PW   = val;
+  if (key === 'abp')   ABP_PW   = val;
+  
+  showToast(`✅ ${key.toUpperCase()} password updated!`);
+}
+
+// ── GLOBAL EVENTS ──────────────────────────────────────────
+
+// Write an event to Firebase that all clients poll
+async function writeGlobalEvent(type, data = {}) {
+  if (!FB_READY) return;
+  await db.collection('settings').doc('globalEvent').set({
+    type,
+    ...data,
+    triggeredBy: getU() || 'ABP',
+    triggeredAt: Date.now()
+  });
+}
+
+// ── DISCO PARTY ────────────────────────────────────────────
+async function triggerDiscoParty() {
+  if (!confirm('Launch DISCO PARTY for all online players? (+5 🧢/sec for 60s)')) return;
+  await writeGlobalEvent('disco', { duration: 60 });
+  showToast('🪩 Disco Party launched for everyone!');
+  abpPollEventStatus();
+}
+
+async function triggerCoinRain() {
+  if (!confirm('Drop +500 🧢 to every logged-in player?')) return;
+  await writeGlobalEvent('coin_rain', { amount: 500 });
+  showToast('💰 Coin Rain launched!');
+}
+
+async function triggerBlackout() {
+  if (!confirm('Trigger BLACKOUT on all screens?')) return;
+  await writeGlobalEvent('blackout', { text: 'SOMETHING WICKED THIS WAY COMES...' });
+  showToast('🌑 Blackout triggered!');
+}
+
+async function triggerAnnouncement() {
+  const msg = prompt('Announcement message (shown to all players):');
+  if (!msg || !msg.trim()) return;
+  await writeGlobalEvent('announcement', { message: msg.trim() });
+  showToast('📢 Announcement sent!');
+}
+
+// ── ABP Event Status ──────────────────────────────────────
+async function abpPollEventStatus() {
+  if (!FB_READY) return;
+  const doc = await db.collection('settings').doc('globalEvent').get();
+  const el = document.getElementById('abp-event-status');
+  if (!el) return;
+  if (!doc.exists) { el.innerHTML = '<div class="empty">No active events.</div>'; return; }
+  const d = doc.data();
+  const age = Math.floor((Date.now() - (d.triggeredAt || 0)) / 1000);
+  el.innerHTML = `
+    <div class="abp-status-row">
+      <span style="color:#00c8ff;font-weight:700">${esc(d.type || '—')}</span>
+      <span style="color:var(--muted);font-size:.82rem">${age}s ago by ${esc(d.triggeredBy || '?')}</span>
+      <button class="bsm del" style="padding:3px 10px;font-size:.78rem" onclick="abpClearEvent()">Clear</button>
+    </div>`;
+}
+
+async function abpClearEvent() {
+  if (!FB_READY) return;
+  await db.collection('settings').doc('globalEvent').delete();
+  showToast('Event cleared.');
+  abpPollEventStatus();
+}
+
+// ── CLIENT-SIDE: Listen for global events ─────────────────
+let _lastEventTs = 0;
+let _discoInterval = null;
+let _discoCoinsEarned = 0;
+
+function startGlobalEventListener() {
+  if (!FB_READY) return;
+  db.collection('settings').doc('globalEvent').onSnapshot(doc => {
+    if (!doc.exists) return;
+    const d = doc.data();
+    if (!d.triggeredAt || d.triggeredAt <= _lastEventTs) return;
+    _lastEventTs = d.triggeredAt;
+    if (d.type === 'disco')        handleDiscoPart(d);
+    if (d.type === 'coin_rain')    handleCoinRain(d);
+    if (d.type === 'blackout')     handleBlackout(d);
+    if (d.type === 'announcement') handleAnnouncement(d);
+  });
+}
+
+// ── DISCO PARTY HANDLER (runs on every client) ─────────────
+function handleDiscoPart(event) {
+  const duration = (event.duration || 60) * 1000;
+  const endTime  = Date.now() + duration;
+  
+  const overlay = document.getElementById('party-overlay');
+  const confetti = document.getElementById('party-confetti-wrap');
+  const coinsEl  = document.getElementById('party-coins-display');
+  const timerEl  = document.getElementById('party-timer-display');
+  
+  overlay.style.display = 'block';
+  _discoCoinsEarned = 0;
+  
+  // Spawn confetti pieces continuously
+  function spawnConfetti() {
+    if (Date.now() >= endTime) return;
+    const piece = document.createElement('div');
+    const colors = ['#ff0080','#ff6600','#ffcc00','#00ff88','#00c8ff','#cc44ff','#ff3333','#ffffff'];
+    const shapes = ['●', '■', '▲', '★', '♦'];
+    piece.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+    piece.style.cssText = `
+      position:absolute;
+      left:${Math.random()*100}%;
+      top:-20px;
+      font-size:${0.8 + Math.random()*1.2}rem;
+      color:${colors[Math.floor(Math.random()*colors.length)]};
+      animation: confettiFall ${1.5 + Math.random()*2}s linear forwards;
+      pointer-events:none;
+    `;
+    confetti.appendChild(piece);
+    setTimeout(() => piece.remove(), 3500);
+    setTimeout(spawnConfetti, 80 + Math.random()*120);
+  }
+  spawnConfetti();
+  
+  // Flash background colors
+  const flashColors = ['#ff000022','#ff880022','#ffcc0022','#00ff8822','#00ccff22','#cc44ff22'];
+  let flashIdx = 0;
+  const flashIv = setInterval(() => {
+    if (Date.now() >= endTime) { clearInterval(flashIv); document.body.style.background = ''; return; }
+    document.body.style.background = flashColors[flashIdx % flashColors.length];
+    flashIdx++;
+  }, 400);
+  
+  // +5 coins per second
+  if (_discoInterval) clearInterval(_discoInterval);
+  _discoInterval = setInterval(async () => {
+    if (Date.now() >= endTime) {
+      clearInterval(_discoInterval);
+      _discoInterval = null;
+      overlay.style.display = 'none';
+      document.body.style.background = '';
+      clearInterval(flashIv);
+      showToast(`🪩 Party over! You earned +${_discoCoinsEarned} 🧢!`);
+      return;
+    }
+    if (!UC) return;
+    UC.coins = (UC.coins || 0) + 5;
+    _discoCoinsEarned += 5;
+    try { await dbUpdateUser(getU(), { coins: UC.coins }); } catch(e) {}
+    refreshCoins();
+    coinsEl.textContent = `+${_discoCoinsEarned} 🧢 earned!`;
+    const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+    timerEl.textContent = `⏱ ${remaining}s`;
+  }, 1000);
+}
+
+// ── COIN RAIN HANDLER ──────────────────────────────────────
+async function handleCoinRain(event) {
+  if (!UC) return;
+  const amount = event.amount || 500;
+  UC.coins = (UC.coins || 0) + amount;
+  await dbUpdateUser(getU(), { coins: UC.coins });
+  refreshCoins();
+  
+  // Coin shower visual
+  const container = document.createElement('div');
+  container.style.cssText = 'position:fixed;inset:0;z-index:99991;pointer-events:none;overflow:hidden';
+  for (let i = 0; i < 60; i++) {
+    const coin = document.createElement('div');
+    coin.textContent = '🧢';
+    coin.style.cssText = `position:absolute;left:${Math.random()*100}%;top:-40px;font-size:${1+Math.random()*1.5}rem;animation:coinRainFall ${1+Math.random()*2}s linear ${Math.random()*1.5}s forwards;`;
+    container.appendChild(coin);
+  }
+  document.body.appendChild(container);
+  setTimeout(() => container.remove(), 5000);
+  showToast(`💰 Coin Rain! +${amount} 🧢 dropped!`);
+}
+
+// ── BLACKOUT HANDLER ───────────────────────────────────────
+function handleBlackout(event) {
+  const overlay = document.getElementById('blackout-overlay');
+  const textEl  = document.getElementById('blackout-text');
+  overlay.style.display = 'flex';
+  overlay.style.opacity = '0';
+  setTimeout(() => { overlay.style.opacity = '1'; }, 50);
+  setTimeout(() => { textEl.textContent = event.text || ''; textEl.style.opacity = '1'; }, 600);
+  setTimeout(() => { overlay.style.opacity = '0'; }, 4000);
+  setTimeout(() => { overlay.style.display = 'none'; textEl.style.opacity = '0'; }, 5000);
+}
+
+// ── ANNOUNCEMENT HANDLER ───────────────────────────────────
+function handleAnnouncement(event) {
+  document.getElementById('announce-text').textContent = event.message || '';
+  document.getElementById('announce-overlay').style.display = 'flex';
+}
+
 
 // ════════════════════════════════════════════════════════
 // ⚔ BATTLE PASS SYSTEM

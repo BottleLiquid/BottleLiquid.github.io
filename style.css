@@ -2173,3 +2173,146 @@ body.theme-corruption{animation:corruptionGlitch .4s steps(1) infinite}
   background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px;transition:.15s;
 }
 .garden-shop-card:hover { border-color:rgba(0,200,80,.3); }
+
+/* ── ABP — ADMIN BOSS PANEL ─────────────────────────────── */
+.abp-hub-btn {
+  background: linear-gradient(135deg,#000d1a,#001a2e) !important;
+  border-color: #00aaff !important;
+  color: #00c8ff !important;
+  font-weight: 700;
+  box-shadow: 0 0 14px rgba(0,180,255,.25);
+  transition: all .3s !important;
+}
+.abp-hub-btn:hover {
+  background: linear-gradient(135deg,#001a2e,#002a40) !important;
+  box-shadow: 0 0 28px rgba(0,200,255,.5) !important;
+  transform: translateY(-2px);
+}
+
+/* Section */
+.abp-section {
+  margin-bottom: 24px;
+}
+.abp-section-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  color: rgba(0,200,255,.7);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0,200,255,.12);
+}
+
+/* Password rows */
+.abp-pw-grid { display: flex; flex-direction: column; gap: 10px; }
+.abp-pw-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 8px;
+}
+.abp-pw-label {
+  font-family: 'Bebas Neue', cursive;
+  font-size: .95rem;
+  letter-spacing: 1px;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+.abp-pw-field {
+  flex: 1;
+  padding: 7px 10px;
+  background: rgba(0,0,0,.4);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: .88rem;
+  outline: none;
+}
+.abp-pw-field:focus { border-color: rgba(0,200,255,.4); }
+.abp-pw-save-btn {
+  padding: 6px 14px;
+  background: rgba(0,180,255,.15);
+  border: 1px solid rgba(0,180,255,.35);
+  border-radius: 6px;
+  color: #00c8ff;
+  font-family: 'Bebas Neue', cursive;
+  font-size: .88rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: .2s;
+  flex-shrink: 0;
+}
+.abp-pw-save-btn:hover { background: rgba(0,180,255,.3); }
+
+/* Events grid */
+.abp-events-grid { display: flex; flex-direction: column; gap: 12px; }
+.abp-event-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid;
+  transition: .2s;
+}
+.abp-event-card:hover { transform: translateX(4px); }
+.abp-event-card.party  { background: rgba(255,0,200,.07); border-color: rgba(255,0,200,.25); }
+.abp-event-card.gold   { background: rgba(255,200,0,.07); border-color: rgba(255,200,0,.25); }
+.abp-event-card.dark   { background: rgba(100,100,100,.07); border-color: rgba(150,150,150,.2); }
+.abp-event-card.blue   { background: rgba(0,150,255,.07); border-color: rgba(0,150,255,.25); }
+.abp-event-icon { font-size: 2rem; flex-shrink: 0; }
+.abp-event-info { flex: 1; }
+.abp-event-name {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.abp-event-desc { font-size: .8rem; color: var(--muted); line-height: 1.4; }
+.abp-event-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: .2s;
+  flex-shrink: 0;
+}
+.abp-event-btn:hover { transform: translateY(-2px); filter: brightness(1.15); }
+.party-btn { background: linear-gradient(135deg, #cc00aa, #ff44cc); color: #fff; box-shadow: 0 4px 14px rgba(200,0,170,.4); }
+.gold-btn  { background: linear-gradient(135deg, #aa7700, #ffcc00); color: #000; box-shadow: 0 4px 14px rgba(200,160,0,.4); }
+.dark-btn  { background: linear-gradient(135deg, #222, #555); color: #fff; }
+.blue-btn  { background: linear-gradient(135deg, #0055cc, #00aaff); color: #fff; box-shadow: 0 4px 14px rgba(0,150,255,.4); }
+
+/* Status */
+.abp-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(0,200,255,.05);
+  border: 1px solid rgba(0,200,255,.15);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+/* Party overlay pulse */
+#party-overlay { background: transparent; }
+
+/* Confetti animation */
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+/* Coin rain animation */
+@keyframes coinRainFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}

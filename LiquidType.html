@@ -1059,6 +1059,7 @@
         <button class="rbtn" style="background:#001a1a; border-color:#006688; color:#4ddbff; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); openGgobsAI();">🤖 GgobsAI</button>
         <button class="rbtn" style="background:#0a001a; border-color:#440066; color:#cc44ff; font-size:.85rem; padding:12px 5px;" onclick="closeHub(); goTab('society');">🏰 Society</button>
         <button class="rbtn" style="background:#001a00;border-color:#00aa44;color:#44ff88;font-size:.85rem;padding:12px 5px;" onclick="closeHub();openGarden();">🌱 Garden</button>
+        <button class="rbtn abp-hub-btn" style="font-size:.85rem;padding:12px 5px;" onclick="closeHub();openABP();">👁 AAP</button>
         <button class="rbtn bank-hub-btn" style="grid-column:1/-1;font-size:.95rem;padding:14px 5px;" onclick="closeHub();openBank();">🏦 Bank</button>
     </div>
     <button class="mbtnclose" onclick="closeHub()">Close</button>
@@ -1581,6 +1582,124 @@
     <button onclick="closeLuckyBox()" style="padding:11px 30px;border:none;border-radius:8px;background:#aa44ff;color:#fff;font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;cursor:pointer">Sick!</button>
   </div>
 </div>
+
+<!-- ══ ABP MODAL ══ -->
+<div class="moverlay" id="abp-overlay">
+  <div class="modal" style="max-width:660px;max-height:92vh;overflow-y:auto;background:linear-gradient(160deg,#000510,#020018);border:2px solid rgba(0,200,255,.25);box-shadow:0 0 80px rgba(0,150,255,.2)">
+
+    <!-- Lock screen -->
+    <div id="abp-lock">
+      <div style="text-align:center;padding:30px 20px">
+        <div style="font-size:3rem;margin-bottom:10px">👁</div>
+        <div style="font-family:'Bebas Neue',cursive;font-size:2.2rem;letter-spacing:4px;color:#00c8ff;text-shadow:0 0 20px rgba(0,200,255,.6)">👁 ADMIN ABUSE PANEL</div>
+        <div style="font-size:.82rem;color:var(--muted);margin:6px 0 22px;letter-spacing:2px;text-transform:uppercase">Restricted Access</div>
+        <input id="abp-pw-input" type="password" placeholder="Enter ABP password…"
+          style="width:100%;max-width:320px;padding:12px 16px;background:rgba(0,200,255,.05);border:1px solid rgba(0,200,255,.3);border-radius:8px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:1rem;outline:none;display:block;margin:0 auto 10px"
+          onkeydown="if(event.key==='Enter')tryABP()">
+        <div id="abp-err" style="color:#ff4444;font-size:.85rem;min-height:18px;margin-bottom:12px"></div>
+        <button onclick="tryABP()" style="padding:11px 32px;border:none;border-radius:8px;background:linear-gradient(135deg,#0066cc,#00aaff);color:#fff;font-family:'Bebas Neue',cursive;font-size:1.3rem;letter-spacing:3px;cursor:pointer">ENTER</button>
+      </div>
+    </div>
+
+    <!-- Open panel -->
+    <div id="abp-open" style="display:none;padding:24px">
+      <div style="font-family:'Bebas Neue',cursive;font-size:1.8rem;letter-spacing:4px;color:#00c8ff;margin-bottom:4px">👁 Admin Abuse Panel</div>
+      <div style="font-size:.78rem;color:var(--muted);letter-spacing:2px;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.07)">Top-level administrative control. Password never stored in source code.</div>
+
+      <!-- Panel Password Manager -->
+      <div class="abp-section">
+        <div class="abp-section-title">🔑 Panel Passwords</div>
+        <div class="abp-pw-grid" id="abp-pw-grid">
+          <div class="empty">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Global Events -->
+      <div class="abp-section">
+        <div class="abp-section-title">🎉 Global Events</div>
+        <div class="abp-events-grid">
+
+          <!-- Disco Party -->
+          <div class="abp-event-card party">
+            <div class="abp-event-icon">🪩</div>
+            <div class="abp-event-info">
+              <div class="abp-event-name">DISCO PARTY</div>
+              <div class="abp-event-desc">All online players get +5 🧢 per second for 60 seconds. Party effects on every screen.</div>
+            </div>
+            <button class="abp-event-btn party-btn" onclick="triggerDiscoParty()">🚀 LAUNCH</button>
+          </div>
+
+          <!-- Coin Rain -->
+          <div class="abp-event-card gold">
+            <div class="abp-event-icon">💰</div>
+            <div class="abp-event-info">
+              <div class="abp-event-name">COIN RAIN</div>
+              <div class="abp-event-desc">+500 🧢 instantly dropped to every logged-in player.</div>
+            </div>
+            <button class="abp-event-btn gold-btn" onclick="triggerCoinRain()">🚀 LAUNCH</button>
+          </div>
+
+          <!-- Blackout -->
+          <div class="abp-event-card dark">
+            <div class="abp-event-icon">🌑</div>
+            <div class="abp-event-info">
+              <div class="abp-event-name">BLACKOUT</div>
+              <div class="abp-event-desc">Turns everyone's screen black for 5 seconds with a dramatic reveal.</div>
+            </div>
+            <button class="abp-event-btn dark-btn" onclick="triggerBlackout()">🚀 LAUNCH</button>
+          </div>
+
+          <!-- Server Announcement -->
+          <div class="abp-event-card blue">
+            <div class="abp-event-icon">📢</div>
+            <div class="abp-event-info">
+              <div class="abp-event-name">ANNOUNCEMENT</div>
+              <div class="abp-event-desc">Show a full-screen announcement message to all players.</div>
+            </div>
+            <button class="abp-event-btn blue-btn" onclick="triggerAnnouncement()">🚀 LAUNCH</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Active event status -->
+      <div class="abp-section">
+        <div class="abp-section-title">📊 Event Status</div>
+        <div id="abp-event-status" class="empty">No active events.</div>
+      </div>
+
+    </div>
+    <button class="mbtnclose" onclick="closeABP()">Close</button>
+    <div style="clear:both"></div>
+  </div>
+</div>
+
+<!-- ══ PARTY OVERLAY (shown on all clients during disco) ══ -->
+<div id="party-overlay" style="display:none;position:fixed;inset:0;z-index:99990;pointer-events:none;overflow:hidden">
+  <div id="party-confetti-wrap"></div>
+  <div id="party-banner" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Bebas Neue',cursive;font-size:clamp(2.5rem,8vw,5rem);letter-spacing:6px;color:#fff;text-shadow:0 0 30px #ff0,0 0 60px #f0f;text-align:center;animation:partyBannerAnim 1s ease-in-out infinite alternate;pointer-events:none">🪩 DISCO PARTY! 🪩<div style="font-size:.4em;color:#ffcc44;text-shadow:0 0 10px #fc0;margin-top:8px">+5 🧢 PER SECOND!</div></div>
+  <div id="party-coins-display" style="position:absolute;bottom:20px;right:24px;font-family:'Bebas Neue',cursive;font-size:1.8rem;color:#ffdd00;text-shadow:0 0 15px #fc0;letter-spacing:2px"></div>
+  <div id="party-timer-display" style="position:absolute;top:20px;right:24px;font-family:'Bebas Neue',cursive;font-size:1.4rem;color:rgba(255,255,255,.7);letter-spacing:2px"></div>
+</div>
+@keyframes partyBannerAnim{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-50%) scale(1.06)}}
+
+<!-- ══ BLACKOUT OVERLAY ══ -->
+<div id="blackout-overlay" style="display:none;position:fixed;inset:0;z-index:99995;background:#000;pointer-events:none;opacity:0;transition:opacity .5s">
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+    <div id="blackout-text" style="font-family:'Bebas Neue',cursive;font-size:clamp(2rem,6vw,4rem);letter-spacing:6px;color:#fff;text-shadow:0 0 40px #fff;opacity:0;transition:opacity 1s;text-align:center"></div>
+  </div>
+</div>
+
+<!-- ══ ANNOUNCEMENT OVERLAY ══ -->
+<div id="announce-overlay" style="display:none;position:fixed;inset:0;z-index:99992;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+  <div style="background:linear-gradient(160deg,#001a2e,#000d1a);border:2px solid rgba(0,200,255,.4);border-radius:18px;max-width:560px;width:92%;padding:36px 32px;text-align:center;box-shadow:0 0 80px rgba(0,150,255,.35);animation:announceIn .4s cubic-bezier(.22,1,.36,1)">
+    <div style="font-size:2.5rem;margin-bottom:14px">📢</div>
+    <div style="font-family:'Bebas Neue',cursive;font-size:1.5rem;letter-spacing:3px;color:#00c8ff;margin-bottom:16px">SERVER ANNOUNCEMENT</div>
+    <div id="announce-text" style="font-size:1.1rem;color:var(--text);line-height:1.6;margin-bottom:22px"></div>
+    <button onclick="document.getElementById('announce-overlay').style.display='none'" style="padding:12px 28px;border:none;border-radius:10px;background:linear-gradient(135deg,#0066cc,#00aaff);color:#fff;font-family:'Bebas Neue',cursive;font-size:1.2rem;letter-spacing:2px;cursor:pointer">GOT IT</button>
+  </div>
+</div>
+@keyframes announceIn{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 <!-- GgobsAI Modal -->
 <div class="moverlay" id="ggobsai-overlay" onclick="if(event.target===this)closeGgobsAI()">
