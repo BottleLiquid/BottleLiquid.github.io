@@ -7067,8 +7067,9 @@ async function triggerCoinRain() {
 }
 
 async function triggerBlackout() {
-  if (!confirm('Trigger BLACKOUT on all screens?')) return;
-  await writeGlobalEvent('blackout', { text: 'SOMETHING WICKED THIS WAY COMES...' });
+  const msg = prompt('Blackout message (shown in red on everyone\'s screen):', 'SOMETHING WICKED THIS WAY COMES...');
+  if (msg === null) return;
+  await writeGlobalEvent('blackout', { text: msg.trim() || 'BLACKOUT' });
   showToast('🌑 Blackout triggered!');
 }
 
