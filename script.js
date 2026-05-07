@@ -2366,7 +2366,7 @@ async function sendChat(){
   if(!FB_READY)scrollMsgs();
 
   // Additional Cloudflare Worker sync
-  fetch("https://bgichat.finnarthur17-465.workers.dev/", {
+  fetch("https://bgichat.liquidtype.workers.dev", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
